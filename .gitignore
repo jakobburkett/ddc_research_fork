@@ -1,0 +1,16 @@
+ddc/~ddc/*/fraxtil
+ddc/~ddc/*/itg
+
+ddc/~ddc/*/*/fraxtil
+ddc/~ddc/*/*/itg
+
+ddc/infer/tmp
+ddc/infer/__pycache__
+
+ddc/learn/tmp
+ddc/learn/__pycache__
+
+ddc/scripts/*.txt
+
+ddc/*.txt
+ddc/*.7z
