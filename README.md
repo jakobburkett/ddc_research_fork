@@ -20,6 +20,8 @@ Can be found in `requirements.txt`
 
 I could only find these packages through WSL so you'll probably need to use that or Linux
 
+### ALSO I didn't convert it to python3 so you must use python2
+
 # Running demo locally
 
 1. Run server: `./new_ddc_server.sh` (it's inside `infer/`)
