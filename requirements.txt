@@ -1,5 +1,5 @@
 click==7.1.2
-essentia==2.1b6.dev234
+essentia
 Flask==1.1.4
 funcsigs==1.0.2
 itsdangerous==1.1.0
@@ -8,8 +8,8 @@ MarkupSafe==1.1.1
 mock==3.0.5
 numpy==1.16.6
 protobuf==3.17.3
-PyYAML==5.4.1
+PyYAML
 scipy==1.2.3
-six==1.16.0
-tensorflow==0.12.1
+six
+tensorflow
 Werkzeug==1.0.1
