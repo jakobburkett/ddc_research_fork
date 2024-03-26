@@ -1,3 +1,5 @@
+# PLEASE DO NOT PUSH ANYTHING FROM /data
+
 # Requirements
 
 Can be found in `requirements.txt`
