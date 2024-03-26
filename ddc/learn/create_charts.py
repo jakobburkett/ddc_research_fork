@@ -10,7 +10,7 @@ def create_onset_charts(meta, song_features, frame_rate):
         try:
             onset_chart = OnsetChart(song_metadata, song_features, frame_rate, metadata, raw_chart['notes'])
         except ValueError as e:
-            print ('Error from {}: {}'.format(meta['title'].encode('ascii', 'ignore'), e))
+            print(('Error from {}: {}'.format(meta['title'].encode('ascii', 'ignore'), e)))
             continue
         charts.append(onset_chart)
 
@@ -25,7 +25,7 @@ def create_symbolic_charts(meta, song_features, frame_rate, sym_k):
                 sym_k = 1
             sym_chart = SymbolicChart(song_metadata, song_features, frame_rate, metadata, raw_chart['notes'], sym_k)
         except ValueError as e:
-            print ('Error from {}: {}'.format(meta['title'].encode('ascii', 'ignore'), e))
+            print(('Error from {}: {}'.format(meta['title'].encode('ascii', 'ignore'), e)))
             continue
         charts.append(sym_chart)
 
@@ -80,7 +80,7 @@ if __name__ == '__main__':
     frame_rate = 1.0
     if args.frame_rate:
         frame_rate = get_frame_rate(args.frame_rate)
-        print('frame_rate: {}'.format(frame_rate))
+        print(('frame_rate: {}'.format(frame_rate)))
 
     name_from_fp = lambda x: os.path.splitext(os.path.split(x)[1])[0]
 
@@ -107,12 +107,12 @@ if __name__ == '__main__':
 
                 song_feats = None
                 # print '{}'.format(args.feats_dir)
-                print('executing {}'.format(json_name))
+                print(('executing {}'.format(json_name)))
                 if args.feats_dir:
                     song_feats_fp = os.path.join(args.feats_dir, '{}.pkl'.format(json_name))
                     with open(song_feats_fp, 'rb') as f:
                         song_feats = pickle.load(f)
-                print('executed {}'.format(json_name))
+                print(('executed {}'.format(json_name)))
                 if args.chart_type == 'onset':
                     song_charts = create_onset_charts(meta, song_feats, frame_rate)
                     # song_data = Song_data(song_metadata, song_feats, song_charts)
@@ -145,4 +145,4 @@ if __name__ == '__main__':
         with open(os.path.join(args.out_dir, '{}.txt'.format(dataset_name)), 'w') as f:
             f.write('\n'.join(dataset_out_names))
 
-    print ('Parsed {} charts, {} passed {} failed'.format(ngood + nbad, ngood, nbad))
+    print(('Parsed {} charts, {} passed {} failed'.format(ngood + nbad, ngood, nbad)))

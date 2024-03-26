@@ -1,4 +1,4 @@
-for COLL in fraxtil itg
+for COLL in speirmix
 do
 	echo "Executing ${1} for ${COLL}"
 	${1} ${COLL}

@@ -60,6 +60,7 @@ if __name__ == '__main__':
             sub_fps = sub_fps[split_int:]
 
         for split, splitname in zip(split_fps, split_names):
+            print("Splitname:", splitname, "Size:", len(split))
             out_name = '{}{}.txt'.format(pack_name, '_' + splitname if splitname else '')
             out_fp = os.path.join(out_dir, out_name)
             with open(out_fp, 'w') as f:

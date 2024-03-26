@@ -13,3 +13,5 @@ ddc/~ddc/*
 new_ddc/*
 
 .venv
+ddc/data
+*.py.bak

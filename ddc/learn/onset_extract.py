@@ -48,7 +48,7 @@ def test():
         os.makedirs(FLAGS.out_dir)
 
     with tf.Session() as sess:
-        print ('Restoring model weights from {}'.format(FLAGS.train_ckpt_fp))
+        print(('Restoring model weights from {}'.format(FLAGS.train_ckpt_fp)))
         model.train_saver.restore(sess, FLAGS.train_ckpt_fp)
 
         for pkl_fp in tqdm(pkl_fps):

@@ -8,7 +8,7 @@ class NgramSequence:
     def get_ngrams(self, k, pre=True, post=True):
         prepend = []
         if pre:
-            prepend = ['<pre{}>'.format(i) for i in reversed(range(k - 1))]
+            prepend = ['<pre{}>'.format(i) for i in reversed(list(range(k - 1)))]
 
         append = []
         if post:
@@ -25,11 +25,11 @@ class NgramLanguageModel:
         self.ngram_total = sum(self.ngram_counts.values())
 
         self.history_counts = Counter()
-        for ngram, count in ngram_counts.items():
+        for ngram, count in list(ngram_counts.items()):
             self.history_counts[ngram[:-1]] += count
 
         self.vocab = set()
-        for ngram, _ in ngram_counts.items():
+        for ngram, _ in list(ngram_counts.items()):
             for w in ngram:
                 self.vocab.add(w)
 
@@ -108,7 +108,7 @@ if __name__ == '__main__':
         model = NgramLanguageModel(args.k, ngram_counts)
 
         ptotmle = 0.0
-        for ngram, count in ngram_counts.items():
+        for ngram, count in list(ngram_counts.items()):
             ptotmle += model.mle(ngram)
 
         with open(args.model_fp, 'wb') as f:
@@ -161,6 +161,6 @@ if __name__ == '__main__':
         copy_pasta = []
         for l in eval_results:
             copy_pasta.append(','.join([str(x) for x in l]))
-        print (','.join(copy_pasta))
+        print((','.join(copy_pasta)))
     else:
         raise NotImplementedError()

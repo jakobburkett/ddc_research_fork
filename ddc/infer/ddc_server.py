@@ -89,7 +89,7 @@ def load_ss_model(ss_ckpt_fp, sess):
             dnn_init=None,
             dnn_keep_prob=1.0
         )
-    model_ss_vars = list(filter(lambda v: 'model_ss' in v.name, tf.all_variables()))
+    model_ss_vars = list([v for v in tf.all_variables() if 'model_ss' in v.name])
     saver = tf.train.Saver(model_ss_vars)
     saver.restore(sess, ss_ckpt_fp)
     return model_ss
@@ -147,7 +147,7 @@ def create_chart_dir(
         ss_model, idx_to_label,
         out_dir, delete_audio=False):
     if not artist or not title:
-        print ('Extracting metadata from {}'.format(audio_fp))
+        print(('Extracting metadata from {}'.format(audio_fp)))
         meta_reader = MetadataReader(filename=audio_fp)
         metadata = meta_reader()
         if not artist:
@@ -159,7 +159,7 @@ def create_chart_dir(
         if not title:
             title = 'Unknown Title'
 
-    print ('Loading {} - {}'.format(artist, title))
+    print(('Loading {} - {}'.format(artist, title)))
     try:
         song_feats = extract_mel_feats(audio_fp, analyzers, nhop=441)
     except:
@@ -167,7 +167,7 @@ def create_chart_dir(
     song_feats -= norm[0]
     song_feats /= norm[1]
     song_len_sec = song_feats.shape[0] / _HZ
-    print ('Processed {} minutes of features'.format(song_len_sec / 60.0))
+    print(('Processed {} minutes of features'.format(song_len_sec / 60.0)))
 
     diff_chart_txts = []
     for diff in diffs:
@@ -194,7 +194,7 @@ def create_chart_dir(
             prediction = sess.run(sp_model.prediction, feed_dict=feed_dict)[:, 0]
             predictions.append(prediction)
         predictions = np.concatenate(predictions)[:song_feats.shape[0]]
-        print (predictions.shape)
+        print((predictions.shape))
 
         print ('Peak picking')
         predictions_smoothed = np.convolve(predictions, np.hamming(5), 'same')
@@ -204,7 +204,7 @@ def create_chart_dir(
             t = float(i) * _DT
             if predictions[i] >= threshold:
                 placed_times.append(t)
-        print ('Found {} peaks, density {} steps per second'.format(len(placed_times), len(placed_times) / song_len_sec))
+        print(('Found {} peaks, density {} steps per second'.format(len(placed_times), len(placed_times) / song_len_sec)))
 
         print ('Performing step selection')
         state = sess.run(ss_model.initial_state)
@@ -254,7 +254,7 @@ def create_chart_dir(
         bpm=_BPM,
         charts='\n'.join(diff_chart_txts))
 
-    print ('Saving to {}'.format(out_dir))
+    print(('Saving to {}'.format(out_dir)))
     try:
         if not os.path.isdir(out_dir):
             os.mkdir(out_dir)
@@ -337,7 +337,7 @@ def choreograph():
             print (e)
             return 'Unknown error', 500
 
-        print ('Creating zip {}'.format(z.name))
+        print(('Creating zip {}'.format(z.name)))
         with zipfile.ZipFile(z.name, 'w', zipfile.ZIP_DEFLATED) as f:
             for fn in os.listdir(out_dir):
                 f.write(

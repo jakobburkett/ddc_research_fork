@@ -29,7 +29,7 @@ class BeatCalc(object):
                 stops[beat] += stop
             stops[beat] = stop
         
-        beat_stop = filter(fun, sorted(stops.items()))
+        beat_stop = list(filter(fun, sorted(stops.items())))
         # beat_stop = filter(lambda x: x[1] != 0.0, sorted(stops.items(), key=lambda x: x[0]))
 
         self.offset = offset
@@ -81,11 +81,11 @@ class BeatCalc(object):
 
 if __name__ == '__main__':
     bc = BeatCalc(0.05, [(0.0, 120.0), (32.0, 60.0), (64.0, 120.0)], [(16.0, 5.0)])
-    print (bc.beat_to_time(0.0))
-    print (bc.beat_to_time(1.0))
-    print (bc.beat_to_time(8.0))
-    print (bc.beat_to_time(16.0))
-    print (bc.beat_to_time(32.0))
-    print ('-' * 80)
-    print (bc.time_to_beat(0.0))
-    print (bc.time_to_beat(1.0))
+    print((bc.beat_to_time(0.0)))
+    print((bc.beat_to_time(1.0)))
+    print((bc.beat_to_time(8.0)))
+    print((bc.beat_to_time(16.0)))
+    print((bc.beat_to_time(32.0)))
+    print(('-' * 80))
+    print((bc.time_to_beat(0.0)))
+    print((bc.time_to_beat(1.0)))

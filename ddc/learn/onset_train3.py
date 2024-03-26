@@ -1,5 +1,5 @@
 from collections import defaultdict
-import cPickle as pickle
+import pickle as pickle
 import os
 import time
 
@@ -81,13 +81,13 @@ def main(_):
     do_cnn_export = bool(FLAGS.export_feat_name)
 
     # Load data
-    print 'Loading data'
+    print('Loading data')
     train_data, valid_data, test_data = open_dataset_fps(FLAGS.train_txt_fp, FLAGS.valid_txt_fp, FLAGS.test_txt_fp)
 
     # Select channels
     if FLAGS.audio_select_channels:
         channels = stride_csv_arg_list(FLAGS.audio_select_channels, 1, int)
-        print 'Selecting channels {} from data'.format(channels)
+        print('Selecting channels {} from data'.format(channels))
         for data in [train_data, valid_data, test_data]:
             select_channels(data, channels)
 
@@ -95,12 +95,12 @@ def main(_):
     if FLAGS.z_score:
         z_score_fp = os.path.join(FLAGS.experiment_dir, 'valid_mean_std.pkl')
         if do_valid and not os.path.exists(z_score_fp):
-            print 'Calculating validation metrics'
+            print('Calculating validation metrics')
             mean_per_band, std_per_band = calc_mean_std_per_band(valid_data)
             with open(z_score_fp, 'wb') as f:
                 pickle.dump((mean_per_band, std_per_band), f)
         else:
-            print 'Loading validation metrics'
+            print('Loading validation metrics')
             with open(z_score_fp, 'rb') as f:
                 mean_per_band, std_per_band = pickle.load(f)
 
@@ -109,11 +109,11 @@ def main(_):
             apply_z_norm(data, mean_per_band, std_per_band)
 
     # Flatten the data into chart references for easier iteration
-    print 'Flattening datasets into charts'
+    print('Flattening datasets into charts')
     charts_train = flatten_dataset_to_charts(train_data)
     charts_valid = flatten_dataset_to_charts(valid_data)
     charts_test = flatten_dataset_to_charts(test_data)
-    print 'Train set: {} charts, valid set: {} charts, test set: {} charts'.format(len(charts_train), len(charts_valid), len(charts_test))
+    print('Train set: {} charts, valid set: {} charts, test set: {} charts'.format(len(charts_train), len(charts_valid), len(charts_test)))
 
     # Load ID maps
     diff_feet_to_id = None
@@ -142,7 +142,7 @@ def main(_):
     nfeats += 0 if freetext_to_id is None else max(freetext_to_id.values()) + 1
     nfeats += 1 if FLAGS.feat_beat_phase else 0
     nfeats += 1 if FLAGS.feat_beat_phase_cos else 0
-    print 'Feature configuration (nfeats={}): {}'.format(nfeats, feats_config)
+    print('Feature configuration (nfeats={}): {}'.format(nfeats, feats_config))
 
     # Create training data exclusions config
     tn_exclusions = {
@@ -154,7 +154,7 @@ def main(_):
     }
     train_batch_config = feats_config.copy()
     train_batch_config.update(tn_exclusions)
-    print 'Exclusions: {}'.format(tn_exclusions)
+    print('Exclusions: {}'.format(tn_exclusions))
 
     # Create model config
     model_config = {
@@ -180,11 +180,11 @@ def main(_):
         'grad_clip': FLAGS.grad_clip,
         'opt': FLAGS.opt,
     }
-    print 'Model configuration: {}'.format(model_config)
+    print('Model configuration: {}'.format(model_config))
 
     with tf.Graph().as_default(), tf.Session() as sess:
         if do_train:
-            print 'Creating train model'
+            print('Creating train model')
             with tf.variable_scope('model_sp', reuse=None):
                 model_train = OnsetNet(mode='train', target_weight_strategy=FLAGS.weight_strategy, batch_size=FLAGS.batch_size, **model_config)
 
@@ -201,10 +201,10 @@ def main(_):
         # Restore or init model
         model_saver = tf.train.Saver(tf.global_variables())
         if FLAGS.model_ckpt_fp:
-            print 'Restoring model weights from {}'.format(FLAGS.model_ckpt_fp)
+            print('Restoring model weights from {}'.format(FLAGS.model_ckpt_fp))
             model_saver.restore(sess, FLAGS.model_ckpt_fp)
         else:
-            print 'Initializing model weights from scratch'
+            print('Initializing model weights from scratch')
             sess.run(tf.global_variables_initializer())
 
         # Create summaries
@@ -244,7 +244,7 @@ def main(_):
             examples_per_batch *= FLAGS.rnn_nunroll if FLAGS.weight_strategy == 'rect' else 1
             batches_per_epoch = train_nframes // examples_per_batch
             nbatches = FLAGS.nepochs * batches_per_epoch
-            print '{} frames in data, {} batches per epoch, {} batches total'.format(train_nframes, batches_per_epoch, nbatches)
+            print('{} frames in data, {} batches per epoch, {} batches total'.format(train_nframes, batches_per_epoch, nbatches))
 
             # Init epoch
             lr_summary = model_train.assign_lr(sess, FLAGS.lr)
@@ -277,22 +277,22 @@ def main(_):
                     # x_f = open('batch_xentropies.txt', 'a')
                     # x_f_str = str(batch_num) + ": " + str(batch_xentropy) + "\n"
                     # x_f.write(x_f_str)
-                    print("batch_num = " + str(batch_num))
-                    print("batches_per_epoch = " + str(batches_per_epoch))
+                    print(("batch_num = " + str(batch_num)))
+                    print(("batches_per_epoch = " + str(batches_per_epoch)))
 
                     if batch_num == 56000:
                         break
 
                     if batch_num % batches_per_epoch == 0:
                         epoch_num = batch_num // batches_per_epoch
-                        print 'Completed epoch {}'.format(epoch_num)
+                        print('Completed epoch {}'.format(epoch_num))
 
                         lr_decay = FLAGS.lr_decay_rate ** max(epoch_num - FLAGS.lr_decay_delay, 0)
                         lr_summary = model_train.assign_lr(sess, FLAGS.lr * lr_decay)
                         summary_writer.add_summary(lr_summary, batch_num)
 
                         epoch_xentropy = np.mean(epoch_xentropies)
-                        print 'Epoch mean cross-entropy (nats) {}'.format(epoch_xentropy)
+                        print('Epoch mean cross-entropy (nats) {}'.format(epoch_xentropy))
                         epoch_summary = sess.run(epoch_summaries, feed_dict={epoch_mean_xentropy: epoch_xentropy, epoch_mean_time: np.mean(epoch_times), epoch_var_xentropy: np.var(epoch_xentropies), epoch_var_time: np.var(epoch_times)})
                         summary_writer.add_summary(epoch_summary, batch_num)
 
@@ -300,13 +300,13 @@ def main(_):
                         epoch_times = []
 
                     if batch_num % FLAGS.nbatches_per_ckpt == 0:
-                        print 'Saving model weights...'
+                        print('Saving model weights...')
                         ckpt_fp = os.path.join(FLAGS.experiment_dir, 'onset_net_train')
                         model_saver.save(sess, ckpt_fp, global_step=tf.contrib.framework.get_or_create_global_step())
-                        print 'Done saving!'
+                        print('Done saving!')
 
                     if do_train_eval and batch_num % FLAGS.nbatches_per_eval == 0:
-                        print 'Evaluating...'
+                        print('Evaluating...')
                         eval_start_time = time.time()
 
                         metrics = defaultdict(list)
@@ -315,13 +315,13 @@ def main(_):
                             assert int(np.sum(y_true)) == chart.get_nonsets()
 
                             chart_metrics = eval_metrics_for_scores(y_true, y_scores, y_xentropies, y_scores_pkalgn)
-                            for metrics_key, metric_value in chart_metrics.items():
+                            for metrics_key, metric_value in list(chart_metrics.items()):
                                 metrics[metrics_key].append(metric_value)
 
-                        metrics = {k: (np.mean(v), np.var(v)) for k, v in metrics.items()}
+                        metrics = {k: (np.mean(v), np.var(v)) for k, v in list(metrics.items())}
                         feed_dict = {}
                         results = []
-                        for metric_name, (mean, var) in metrics.items():
+                        for metric_name, (mean, var) in list(metrics.items()):
                             feed_dict[eval_metrics[metric_name][0]] = mean
                             feed_dict[eval_metrics[metric_name][1]] = var
                         feed_dict[eval_time] = time.time() - eval_start_time
@@ -330,14 +330,14 @@ def main(_):
 
                         perplexity_avg_mean = metrics['perplexity'][0]
                         if perplexity_avg_mean < eval_best_perplexity:
-                            print 'Perplexity {} better than previous {}'.format(perplexity_avg_mean, eval_best_perplexity)
+                            print('Perplexity {} better than previous {}'.format(perplexity_avg_mean, eval_best_perplexity))
 
                             p_file.write('{},{},{}\n'.format(perplexity_avg_mean, eval_best_perplexity, batch_num))
                             p_file.flush()
 
                         xentropy_avg_mean = metrics['xentropy_avg'][0]
                         if xentropy_avg_mean < eval_best_xentropy_avg:
-                            print 'Xentropy {} better than previous {}'.format(xentropy_avg_mean, eval_best_xentropy_avg)
+                            print('Xentropy {} better than previous {}'.format(xentropy_avg_mean, eval_best_xentropy_avg))
                             
                             x_file.write('{},{},{}\n'.format(xentropy_avg_mean, eval_best_xentropy_avg, batch_num))
                             x_file.flush()
@@ -347,7 +347,7 @@ def main(_):
 
                         auprc_mean = metrics['auprc'][0]
                         if auprc_mean > eval_best_auprc:
-                            print 'AUPRC {} better than previous {}'.format(auprc_mean, eval_best_auprc)
+                            print('AUPRC {} better than previous {}'.format(auprc_mean, eval_best_auprc))
                             
                             a_file.write('{},{},{}\n'.format(auprc_mean, eval_best_auprc, batch_num))
                             a_file.flush()
@@ -357,17 +357,17 @@ def main(_):
 
                         fscore_mean = metrics['fscore'][0]
                         if fscore_mean > eval_best_fscore:
-                            print 'Fscore {} better than previous {}'.format(fscore_mean, eval_best_fscore)
+                            print('Fscore {} better than previous {}'.format(fscore_mean, eval_best_fscore))
                             f_file.write('{},{},{}\n'.format(fscore_mean, eval_best_fscore, batch_num))
                             f_file.flush()
                             ckpt_fp = os.path.join(FLAGS.experiment_dir, 'onset_net_early_stop_fscore')
                             model_early_stop_fscore.save(sess, ckpt_fp, global_step=tf.contrib.framework.get_or_create_global_step())
                             eval_best_fscore = fscore_mean
 
-                        print 'Done evaluating'
+                        print('Done evaluating')
 
         if do_cnn_export:
-            print 'Exporting CNN features...'
+            print('Exporting CNN features...')
             export_dir = os.path.join(FLAGS.experiment_dir, 'export_{}'.format(FLAGS.export_feat_name))
 
             if not os.path.exists(export_dir):
@@ -409,7 +409,7 @@ def main(_):
                     assert song_feats_export.ndim == 3
 
                     out_name = song_names.pop(0)
-                    print '{} ({})->{} ({})'.format(chart.get_song_metadata(), chart.song_features.shape, out_name, song_feats_export.shape)
+                    print('{} ({})->{} ({})'.format(chart.get_song_metadata(), chart.song_features.shape, out_name, song_feats_export.shape))
 
                     with open(os.path.join(export_dir, '{}.pkl'.format(out_name)), 'wb') as f:
                         pickle.dump(song_feats_export, f)
@@ -419,7 +419,7 @@ def main(_):
             assert len(song_names) == 0
 
         if do_eval and not do_cnn_export:
-            print 'Evaluating...'
+            print('Evaluating...')
 
             exports = stride_csv_arg_list(FLAGS.eval_charts_export, 1, int)
             diff_concat = lambda d, diff: np.concatenate(d[diff])
@@ -429,7 +429,7 @@ def main(_):
 
             # calculate thresholds
             if len(charts_valid) > 0:
-                print 'Calculating perchart and micro thresholds for validation data'
+                print('Calculating perchart and micro thresholds for validation data')
 
                 # go through charts calculating scores and thresholds
                 diff_to_threshold = defaultdict(list)
@@ -444,7 +444,7 @@ def main(_):
                     diff_to_y_scores_pkalgn_all[chart.get_coarse_difficulty()].append(y_scores_pkalgn)
 
                 # lambdas for calculating micro thresholds
-                diffs = diff_to_y_true_all.keys()
+                diffs = list(diff_to_y_true_all.keys())
 
                 # calculate diff perchart
                 diff_to_threshold_perchart = {diff:np.mean(diff_array(diff_to_threshold, diff)) for diff in diffs}
@@ -462,10 +462,10 @@ def main(_):
                 all_metrics = eval_metrics_for_scores(all_concat(diff_to_y_true_all), None, None, all_concat(diff_to_y_scores_pkalgn_all))
                 threshold_all_micro = all_metrics['threshold']
 
-                print 'Diff perchart thresholds: {}'.format(diff_to_threshold_perchart)
-                print 'All perchart threshold: {}'.format(threshold_all_perchart)
-                print 'Diff_micro thresholds: {}'.format(diff_to_threshold_micro)
-                print 'All micro thresholds: {}'.format(threshold_all_micro)
+                print('Diff perchart thresholds: {}'.format(diff_to_threshold_perchart))
+                print('All perchart threshold: {}'.format(threshold_all_perchart))
+                print('Diff_micro thresholds: {}'.format(diff_to_threshold_micro))
+                print('All micro thresholds: {}'.format(threshold_all_micro))
 
             # run evaluation on test data
             diff_to_y_true = defaultdict(list)
@@ -500,7 +500,7 @@ def main(_):
                         'y_scores_pkalgn': y_scores_pkalgn
                     }
                     with open(chart_export_fp, 'wb') as f:
-                        print 'Saving {} {}'.format(chart.get_song_metadata(), chart.get_foot_difficulty())
+                        print('Saving {} {}'.format(chart.get_song_metadata(), chart.get_foot_difficulty()))
                         pickle.dump(chart_eval_save, f)
 
                 if len(charts_valid) > 0:
@@ -510,11 +510,11 @@ def main(_):
                     threshold_names, thresholds = [], []
 
                 chart_metrics = eval_metrics_for_scores(y_true, y_scores, y_xentropies, y_scores_pkalgn, threshold_names, thresholds)
-                for metrics_key, metric in chart_metrics.items():
+                for metrics_key, metric in list(chart_metrics.items()):
                     metrics[metrics_key].append(metric)
 
             # calculate micro metrics
-            diffs = diff_to_y_true.keys()
+            diffs = list(diff_to_y_true.keys())
             metrics_micro, prc = eval_metrics_for_scores(all_concat(diff_to_y_true), all_concat(diff_to_y_scores), all_concat(diff_to_y_xentropies), all_concat(diff_to_y_scores_pkalgn), return_prc=True)
 
             # dump PRC for inspection
@@ -522,7 +522,7 @@ def main(_):
                 pickle.dump(prc, f)
 
             # calculate perchart metrics
-            metrics_perchart = {k: (np.mean(v), np.std(v), np.min(v), np.max(v)) for k, v in metrics.items()}
+            metrics_perchart = {k: (np.mean(v), np.std(v), np.min(v), np.max(v)) for k, v in list(metrics.items())}
 
             # report metrics
             copy_pasta = []
@@ -531,7 +531,7 @@ def main(_):
             for metric_name in metrics_report_micro:
                 metric_stats = metrics_micro[metric_name]
                 copy_pasta += [metric_stats]
-                print 'micro_{}: {}'.format(metric_name, metric_stats)
+                print('micro_{}: {}'.format(metric_name, metric_stats))
 
             metrics_report_perchart = ['xentropy_avg', 'pos_xentropy_avg', 'auroc', 'auprc', 'fscore', 'precision', 'recall', 'threshold', 'accuracy', 'perplexity', 'density_rel']
             for threshold_name in threshold_names:
@@ -540,10 +540,10 @@ def main(_):
             for metric_name in metrics_report_perchart:
                 metric_stats = metrics_perchart.get(metric_name, (0., 0., 0., 0.))
                 copy_pasta += list(metric_stats)
-                print 'perchart_{}: {}'.format(metric_name, metric_stats)
+                print('perchart_{}: {}'.format(metric_name, metric_stats))
 
-            print 'COPY PASTA:'
-            print ','.join([str(x) for x in copy_pasta])
+            print('COPY PASTA:')
+            print(','.join([str(x) for x in copy_pasta]))
 
 def model_scores_for_chart(sess, chart, model, **feat_kwargs):
     if model.do_rnn:

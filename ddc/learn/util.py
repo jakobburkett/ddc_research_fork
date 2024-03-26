@@ -27,7 +27,7 @@ def ez_name(x):
 
 def stride_csv_arg_list(arg, stride, cast=int):
     assert stride > 0
-    l = filter(lambda x: bool(x), [x.strip() for x in arg.split(',')])
+    l = [x for x in [x.strip() for x in arg.split(',')] if bool(x)]
     l = [cast(x) for x in l]
     assert len(l) % stride == 0
     result = []
@@ -95,14 +95,14 @@ def flatten_dataset_to_charts(dataset):
     return [item for sublist in [x[2] for x in dataset] for item in sublist]
 
 def filter_chart_type(charts, chart_type):
-    return filter(lambda x: x.get_type() == chart_type, charts)
+    return [x for x in charts if x.get_type() == chart_type]
 
 def make_onset_feature_context(song_features, frame_idx, radius):
     nframes = song_features.shape[0]
     
     assert nframes > 0
 
-    frame_idxs = range(frame_idx - radius, frame_idx + radius + 1)
+    frame_idxs = list(range(frame_idx - radius, frame_idx + radius + 1))
     context = np.zeros((len(frame_idxs),) + song_features.shape[1:], dtype=song_features.dtype)
     for i, frame_idx in enumerate(frame_idxs):
         if frame_idx >= 0 and frame_idx < nframes:
@@ -137,7 +137,7 @@ def align_onsets_to_sklearn(true_onsets, pred_onsets, scores, tolerance=0):
     # Create alignments
     true_to_pred_confidence = {}
     pred_idxs_used = set()
-    for pred_idx, true_idxs in pred_to_true.items():
+    for pred_idx, true_idxs in list(pred_to_true.items()):
         true_idx_use = true_idxs[0]
         if len(true_idxs) > 1:
             for true_idx in true_idxs:
@@ -152,7 +152,7 @@ def align_onsets_to_sklearn(true_onsets, pred_onsets, scores, tolerance=0):
     y_true = np.zeros_like(scores)
     y_true[list(true_onsets)] = 1.0
     y_scores = np.zeros_like(scores)
-    for true_idx, confidence in true_to_pred_confidence.items():
+    for true_idx, confidence in list(true_to_pred_confidence.items()):
         y_scores[true_idx] = confidence
 
     # Add remaining false positives

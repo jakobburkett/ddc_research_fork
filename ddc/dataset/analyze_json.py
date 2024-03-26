@@ -34,6 +34,8 @@ if __name__ == '__main__':
     arrows_total = 0
     chart_coarse_to_superset = defaultdict(list)
     for json_fp in json_fps:
+        if (json_fp == ''):
+            continue
         with open(json_fp, 'r') as f:
             song_meta = json.loads(f.read())
 
@@ -80,33 +82,35 @@ if __name__ == '__main__':
         for i, coarse in enumerate(coarses):
             for coarse_next in coarses:
                 beats = coarse_to_beats[coarse]
+                if (len(beats) == 0):
+                    continue
                 beats_next = coarse_to_beats[coarse_next]
                 chart_coarse_to_superset[(coarse, coarse_next)].append(len(beats & beats_next) / float(len(beats)))
 
-    chart_coarse_to_stream = {k: sum(l) / len(l) for k, l in chart_coarse_to_stream.items()}
-    chart_coarse_to_superset = {k: (reduce(lambda x, y: x + y, l) / len(l)) for k, l in chart_coarse_to_superset.items()}
+    chart_coarse_to_stream = {k: sum(l) / len(l) for k, l in list(chart_coarse_to_stream.items())}
+    chart_coarse_to_superset = {k: (reduce(lambda x, y: x + y, l) / len(l)) for k, l in list(chart_coarse_to_superset.items())}
 
     nsongs = len(json_fps)
     ncharts = sum(chart_feet.values())
-    print (','.join(args.dataset_fps))
-    print ('Num songs: {}'.format(nsongs))
-    print ('Total music annotated (s): {}'.format(songs_time_annotated))
-    print ('Avg song length (s): {}'.format(songs_time_annotated / nsongs))
+    print((','.join(args.dataset_fps)))
+    print(('Num songs: {}'.format(nsongs)))
+    print(('Total music annotated (s): {}'.format(songs_time_annotated)))
+    print(('Avg song length (s): {}'.format(songs_time_annotated / nsongs)))
 
-    print ('Num charts: {}'.format(ncharts))
-    print ('Avg num charts per song: {}'.format(float(ncharts) / nsongs))
-    print ('Total chart time annotated (s): {}'.format(charts_time_annotated))
-    print ('Avg chart length (s): {}'.format(charts_time_annotated / ncharts))
-    print ('Avg chart length (steps): {}'.format(float(arrows_total) / ncharts))
+    print(('Num charts: {}'.format(ncharts)))
+    print(('Avg num charts per song: {}'.format(float(ncharts) / nsongs)))
+    print(('Total chart time annotated (s): {}'.format(charts_time_annotated)))
+    print(('Avg chart length (s): {}'.format(charts_time_annotated / ncharts)))
+    print(('Avg chart length (steps): {}'.format(float(arrows_total) / ncharts)))
 
-    print ('Chart types: {}'.format(chart_types))
-    print ('Chart coarse difficulties: {}'.format(chart_diff_coarse))
-    print ('Chart feet: {}'.format(chart_feet))
-    print ('Chart coarse avg arrows per second: {}'.format(chart_coarse_to_stream))
-    print ('Chart coarse avg superset: {}'.format(chart_coarse_to_superset))
-    print ('Chart freetext fields: {}'.format(chart_freetexts))
-    print ('Chart vocabulary (size={}): {}'.format(len(vocab), vocab))
-    print ('Beat phases: {}'.format(beat_phases))
+    print(('Chart types: {}'.format(chart_types)))
+    print(('Chart coarse difficulties: {}'.format(chart_diff_coarse)))
+    print(('Chart feet: {}'.format(chart_feet)))
+    print(('Chart coarse avg arrows per second: {}'.format(chart_coarse_to_stream)))
+    print(('Chart coarse avg superset: {}'.format(chart_coarse_to_superset)))
+    print(('Chart freetext fields: {}'.format(chart_freetexts)))
+    print(('Chart vocabulary (size={}): {}'.format(len(vocab), vocab)))
+    print(('Beat phases: {}'.format(beat_phases)))
 
-    print ('Avg feet: {}'.format(feet_total / ncharts))
-    print ('Avg arrows per second: {}'.format(stream_total / ncharts))
+    print(('Avg feet: {}'.format(feet_total / ncharts)))
+    print(('Avg arrows per second: {}'.format(stream_total / ncharts)))

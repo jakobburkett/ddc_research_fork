@@ -61,16 +61,16 @@ class OnsetChart(Chart):
         self.song_features = song_features
         # print(song_features)
         self.nframes = song_features.shape[0]
-        print('nframes: {}'.format(self.nframes))
+        print(('nframes: {}'.format(self.nframes)))
 
         self.dt = dt = 1.0 / frame_rate
-        print('dt: {}'.format(self.dt))
+        print(('dt: {}'.format(self.dt)))
         self.onsets = set(int(round(t / dt)) for _, _, t, _ in self.annotations)
-        print('onsets.1: {}'.format(self.onsets))
-        self.onsets = set(filter(lambda x: x >= 0, self.onsets))
-        print('onsets.2: {}'.format(self.onsets))
-        self.onsets = set(filter(lambda x: x < self.nframes, self.onsets))
-        print('onsets.3: {}'.format(self.onsets))
+        print(('onsets.1: {}'.format(self.onsets)))
+        self.onsets = set([x for x in self.onsets if x >= 0])
+        print(('onsets.2: {}'.format(self.onsets)))
+        self.onsets = set([x for x in self.onsets if x < self.nframes])
+        print(('onsets.3: {}'.format(self.onsets)))
 
         self.first_onset = min(self.onsets)
         self.last_onset = max(self.onsets)
@@ -83,10 +83,10 @@ class OnsetChart(Chart):
         assert self.nframes >= self.nframes_annotated
         assert len(self.onsets) > 0
 
-        print('onsets: {}'.format(self.onsets))
+        print(('onsets: {}'.format(self.onsets)))
 
         self.blanks = set(range(self.nframes)) - self.onsets
-        print('blanks: {}'.format(self.blanks))
+        print(('blanks: {}'.format(self.blanks)))
         self._blanks_memoized = {}
 
     def get_nframes(self):

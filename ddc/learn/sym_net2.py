@@ -139,7 +139,7 @@ class SymNet:
 
                 pool_shape = [1, ptime, pband, 1]
                 pooled = tf.nn.max_pool(convolved, ksize=pool_shape, strides=pool_shape, padding='SAME')
-                print ('{}: {}'.format(layer_name, pooled.get_shape()))
+                print(('{}: {}'.format(layer_name, pooled.get_shape())))
 
                 # TODO: CNN dropout?
 
@@ -151,9 +151,9 @@ class SymNet:
         # Flatten CNN
         nfeats_conv = reduce(lambda x, y: x * y, [int(x) for x in cnn_output.get_shape()[-3:]])
         feats_conv = tf.reshape(cnn_output, shape=[batch_size * in_nunroll, nfeats_conv])
-        print ('feats_sym: {}'.format(feats_sym.get_shape()))
-        print ('feats_cnn: {}'.format(feats_conv.get_shape()))
-        print ('feats_other: {}'.format(feats_other.get_shape()))
+        print(('feats_sym: {}'.format(feats_sym.get_shape())))
+        print(('feats_cnn: {}'.format(feats_conv.get_shape())))
+        print(('feats_other: {}'.format(feats_other.get_shape())))
 
         # Reduce CNN dimensionality
         if cnn_dim_reduction_size >= 0:
@@ -173,7 +173,7 @@ class SymNet:
                 elif cnn_dim_reduction_nonlin == 'relu':
                     feats_conv = tf.nn.relu(feats_conv)
 
-                print ('feats_cnn_reduced: {}'.format(feats_conv.get_shape()))
+                print(('feats_cnn_reduced: {}'.format(feats_conv.get_shape())))
 
         # Project to RNN size
         rnn_output_inspect = None
@@ -234,7 +234,7 @@ class SymNet:
             feats_all = tf.concat_v2([feats_sym, feats_conv, feats_other], axis=1)
             rnn_output = tf.reshape(feats_all, shape=[batch_size, in_nunroll * nfeats_tot])
             rnn_output_size = in_nunroll * nfeats_tot
-        print ('rnn_output: {}'.format(rnn_output.get_shape()))
+        print(('rnn_output: {}'.format(rnn_output.get_shape())))
 
         # Dense NN
         dnn_output = rnn_output
@@ -254,7 +254,7 @@ class SymNet:
                 if mode == 'train' and dnn_keep_prob < 1.0:
                     last_layer = tf.nn.dropout(last_layer, dnn_keep_prob)
                 last_layer_size = layer_size
-                print ('{}: {}'.format(layer_name, last_layer.get_shape()))
+                print(('{}: {}'.format(layer_name, last_layer.get_shape())))
 
             dnn_output = last_layer
             dnn_output_size = last_layer_size
@@ -295,7 +295,7 @@ class SymNet:
 
         if mode != 'gen':
             neg_log_lhoods = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=targets)
-            print (neg_log_lhoods.get_shape())
+            print((neg_log_lhoods.get_shape()))
             """
             # calculate cross-entropy, result is [batch_size * nunroll] where each entry is an unscaled neg ln prob
             neg_log_lhoods = tf.nn.seq2seq.sequence_loss_by_example(
@@ -340,7 +340,7 @@ class SymNet:
             else:
                 raise NotImplementedError()
 
-            train_op = optimizer.apply_gradients(zip(grads, tvars), global_step=tf.contrib.framework.get_or_create_global_step())
+            train_op = optimizer.apply_gradients(list(zip(grads, tvars)), global_step=tf.contrib.framework.get_or_create_global_step())
 
         self.syms = syms_unrolled
         self.feats_other = feats_other_unrolled

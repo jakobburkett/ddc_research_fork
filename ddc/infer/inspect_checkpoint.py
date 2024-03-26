@@ -44,8 +44,8 @@ def _count_total_params(reader, count_exclude_pattern=""):
       else:
         new_var_to_shape_map[v] = var_to_shape_map[v]
     var_to_shape_map = new_var_to_shape_map
-    print("# Excluding %d tensors (%d params) that match %s when counting." % (
-        exclude_num_tensors, exclude_num_params, count_exclude_pattern))
+    print(("# Excluding %d tensors (%d params) that match %s when counting." % (
+        exclude_num_tensors, exclude_num_params, count_exclude_pattern)))
 
   var_sizes = [np.prod(var_to_shape_map[v]) for v in var_to_shape_map]
   return np.sum(var_sizes, dtype=int)
@@ -71,31 +71,31 @@ def print_tensors_in_checkpoint_file(file_name, tensor_name, all_tensors,
       var_to_shape_map = reader.get_variable_to_shape_map()
       var_to_dtype_map = reader.get_variable_to_dtype_map()
       for key, value in sorted(var_to_shape_map.items()):
-        print("tensor: %s (%s) %s" % (key, var_to_dtype_map[key].name, value))
+        print(("tensor: %s (%s) %s" % (key, var_to_dtype_map[key].name, value)))
         if all_tensors:
           try:
-            print(reader.get_tensor(key))
+            print((reader.get_tensor(key)))
           except errors_impl.InternalError:
             print("<not convertible to a numpy dtype>")
     elif not tensor_name:
-      print(reader.debug_string().decode("utf-8", errors="ignore"))
+      print((reader.debug_string().decode("utf-8", errors="ignore")))
     else:
       if not reader.has_tensor(tensor_name):
-        print("Tensor %s not found in checkpoint" % tensor_name)
+        print(("Tensor %s not found in checkpoint" % tensor_name))
         return
 
       var_to_shape_map = reader.get_variable_to_shape_map()
       var_to_dtype_map = reader.get_variable_to_dtype_map()
-      print("tensor: %s (%s) %s" %
+      print(("tensor: %s (%s) %s" %
             (tensor_name, var_to_dtype_map[tensor_name].name,
-             var_to_shape_map[tensor_name]))
-      print(reader.get_tensor(tensor_name))
+             var_to_shape_map[tensor_name])))
+      print((reader.get_tensor(tensor_name)))
 
     # Count total number of parameters
-    print("# Total number of params: %d" % _count_total_params(
-        reader, count_exclude_pattern=count_exclude_pattern))
+    print(("# Total number of params: %d" % _count_total_params(
+        reader, count_exclude_pattern=count_exclude_pattern)))
   except Exception as e:  # pylint: disable=broad-except
-    print(str(e))
+    print((str(e)))
     if "corrupted compressed block contents" in str(e):
       print("It's likely that your checkpoint file has been compressed "
             "with SNAPPY.")
@@ -106,7 +106,7 @@ def print_tensors_in_checkpoint_file(file_name, tensor_name, all_tensors,
 It's likely that this is a V2 checkpoint and you need to provide the filename
 *prefix*.  Try removing the '.' and extension.  Try:
 inspect checkpoint --file_name = {}"""
-      print(v2_file_error_template.format(proposed_file))
+      print((v2_file_error_template.format(proposed_file)))
 
 
 def parse_numpy_printoption(kv_str):

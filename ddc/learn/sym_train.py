@@ -128,10 +128,10 @@ def main(_):
 
     # Filter charts that are too short
     charts_train_len = len(charts_train)
-    charts_train = list(filter(lambda x: x.get_nannotations() >= FLAGS.nunroll, charts_train))
+    charts_train = list([x for x in charts_train if x.get_nannotations() >= FLAGS.nunroll])
     if len(charts_train) != charts_train_len:
-        print ('{} charts too small for training'.format(charts_train_len - len(charts_train)))
-    print ('Train set: {} charts, valid set: {} charts, test set: {} charts'.format(len(charts_train), len(charts_valid), len(charts_test)))
+        print(('{} charts too small for training'.format(charts_train_len - len(charts_train))))
+    print(('Train set: {} charts, valid set: {} charts, test set: {} charts'.format(len(charts_train), len(charts_valid), len(charts_test))))
 
     # Load ID maps
     diff_feet_to_id = None
@@ -173,7 +173,7 @@ def main(_):
         'bucket_time_diff_n': FLAGS.feat_bucket_time_diff_n
     }
     nfeats = 0
-    for feat in feats_config.values():
+    for feat in list(feats_config.values()):
         if feat is None:
             continue
         if isinstance(feat, dict):
@@ -191,7 +191,7 @@ def main(_):
     feats_config['bucket_time_diff_max'] = FLAGS.feat_bucket_time_diff_max
     feats_config_eval = dict(feats_config)
     feats_config_eval['audio_deviation_max'] = 0
-    print ('Feature configuration (nfeats={}): {}'.format(nfeats, feats_config))
+    print(('Feature configuration (nfeats={}): {}'.format(nfeats, feats_config)))
 
     # Create model config
     rnn_proj_init = tf.constant_initializer(0.0, dtype=dtype) if FLAGS.sym_rnn_pretrain_model_ckpt_fp else tf.compat.v1.uniform_unit_scaling_initializer(factor=1.0, dtype=dtype)
@@ -226,7 +226,7 @@ def main(_):
         'grad_clip': FLAGS.grad_clip,
         'opt': FLAGS.opt,
     }
-    print ('Model configuration: {}'.format(model_config))
+    print(('Model configuration: {}'.format(model_config)))
 
     with tf.Graph().as_default(), tf.compat.v1.Session() as sess:
         if do_train:
@@ -253,7 +253,7 @@ def main(_):
         # Restore or init model
         model_saver = tf.compat.v1.train.Saver(tf.compat.v1.global_variables())
         if FLAGS.model_ckpt_fp:
-            print ('Restoring model weights from {}'.format(FLAGS.model_ckpt_fp))
+            print(('Restoring model weights from {}'.format(FLAGS.model_ckpt_fp)))
             model_saver.restore(sess, FLAGS.model_ckpt_fp)
         else:
             print ('Initializing model weights from scratch')
@@ -261,8 +261,8 @@ def main(_):
 
             # Restore or init sym weights
             if FLAGS.sym_rnn_pretrain_model_ckpt_fp:
-                print ('Restoring pretrained weights from {}'.format(FLAGS.sym_rnn_pretrain_model_ckpt_fp))
-                var_list_old = filter(lambda x: 'nosym' not in x.name and 'cnn' not in x.name, tf.compat.v1.global_variables())
+                print(('Restoring pretrained weights from {}'.format(FLAGS.sym_rnn_pretrain_model_ckpt_fp)))
+                var_list_old = [x for x in tf.compat.v1.global_variables() if 'nosym' not in x.name and 'cnn' not in x.name]
                 pretrain_saver = tf.compat.v1.train.Saver(var_list_old)
                 pretrain_saver.restore(sess, FLAGS.sym_rnn_pretrain_model_ckpt_fp)
 
@@ -305,7 +305,7 @@ def main(_):
             examples_per_batch *= model_train.out_nunroll
             batches_per_epoch = train_nexamples // examples_per_batch
             nbatches = FLAGS.nepochs * batches_per_epoch
-            print ('{} frames in data, {} batches per epoch, {} batches total'.format(train_nexamples, batches_per_epoch, nbatches))
+            print(('{} frames in data, {} batches per epoch, {} batches total'.format(train_nexamples, batches_per_epoch, nbatches)))
 
             # Init epoch
             model_train.assign_lr(sess, FLAGS.lr)
@@ -319,7 +319,7 @@ def main(_):
             eval_best_accuracy = float('-inf')
             while FLAGS.nepochs < 0 or batch_num < nbatches:
                 if batch_num % 10000 == 0:
-                    print('batch_num: {} of {} total epochs'.format(batch_num, nbatches))
+                    print(('batch_num: {} of {} total epochs'.format(batch_num, nbatches)))
                 batch_time_start = time.time()
                 syms, feats_other, feats_audio, targets, target_weights = model_train.prepare_train_batch(charts_train, **feats_config)
                 feed_dict = {
@@ -338,7 +338,7 @@ def main(_):
 
                 if batch_num % batches_per_epoch == 0:
                     epoch_num = batch_num // batches_per_epoch
-                    print ('Completed epoch {}'.format(epoch_num))
+                    print(('Completed epoch {}'.format(epoch_num)))
 
                     lr_decay = FLAGS.lr_decay_rate ** max(epoch_num - FLAGS.lr_decay_delay, 0)
                     model_train.assign_lr(sess, FLAGS.lr * lr_decay)
@@ -346,7 +346,7 @@ def main(_):
                         tf.summary.scalar('learning rate', FLAGS.lr * lr_decay, step=batch_num)
 
                     epoch_xentropy = np.mean(epoch_xentropies)
-                    print ('Epoch mean cross-entropy (nats) {}'.format(epoch_xentropy))
+                    print(('Epoch mean cross-entropy (nats) {}'.format(epoch_xentropy)))
                     epoch_summary = sess.run(epoch_summaries, feed_dict={epoch_mean_xentropy: epoch_xentropy, epoch_mean_time: np.mean(epoch_times), epoch_var_xentropy: np.var(epoch_xentropies), epoch_var_time: np.var(epoch_times), epoch_time_total: np.sum(epoch_times)})
                     with summary_writer.as_default():
                         tf.summary.scalar('epoch_summary', epoch_summary, step=batch_num)
@@ -357,7 +357,7 @@ def main(_):
                 if batch_num % FLAGS.nbatches_per_ckpt == 0:
                     print ('Saving model weights...')
                     ckpt_fp = os.path.join(FLAGS.experiment_dir, 'onset_net_train')
-                    print('ckpt_fp: {}'.format(ckpt_fp))
+                    print(('ckpt_fp: {}'.format(ckpt_fp)))
                     model_saver.save(sess, ckpt_fp, global_step=tf.compat.v1.train.get_or_create_global_step())
                     print ('Done saving!')
 
@@ -398,10 +398,10 @@ def main(_):
                         metrics['xentropy_avg'].append(xentropy_avg)
                         metrics['accuracy'].append(accuracy)
 
-                    metrics = {k: (np.mean(v), np.var(v)) for k, v in metrics.items()}
+                    metrics = {k: (np.mean(v), np.var(v)) for k, v in list(metrics.items())}
                     feed_dict = {}
                     results = []
-                    for metric_name, (mean, var) in metrics.items():
+                    for metric_name, (mean, var) in list(metrics.items()):
                         feed_dict[eval_metrics[metric_name][0]] = mean
                         feed_dict[eval_metrics[metric_name][1]] = var
                     feed_dict[eval_time] = time.time() - eval_start_time
@@ -412,14 +412,14 @@ def main(_):
 
                     xentropy_avg_mean = metrics['xentropy_avg'][0]
                     if xentropy_avg_mean < eval_best_xentropy_avg:
-                        print ('Xentropy {} better than previous {}'.format(xentropy_avg_mean, eval_best_xentropy_avg))
+                        print(('Xentropy {} better than previous {}'.format(xentropy_avg_mean, eval_best_xentropy_avg)))
                         ckpt_fp = os.path.join(FLAGS.experiment_dir, 'onset_net_early_stop_xentropy_avg')
                         model_early_stop_xentropy_avg.save(sess, ckpt_fp, global_step=tf.compat.v1.train.get_or_create_global_step())
                         eval_best_xentropy_avg = xentropy_avg_mean
 
                     accuracy_mean = metrics['accuracy'][0]
                     if accuracy_mean > eval_best_accuracy:
-                        print ('Accuracy {} better than previous {}'.format(accuracy_mean, eval_best_accuracy))
+                        print(('Accuracy {} better than previous {}'.format(accuracy_mean, eval_best_accuracy)))
                         ckpt_fp = os.path.join(FLAGS.experiment_dir, 'onset_net_early_stop_accuracy')
                         model_early_stop_accuracy.save(sess, ckpt_fp, global_step=tf.compat.v1.train.get_or_create_global_step())
                         eval_best_accuracy = accuracy_mean
@@ -464,14 +464,14 @@ def main(_):
                 metrics['xentropy_avg'].append(xentropy_avg)
                 metrics['accuracy'].append(accuracy)
 
-            metrics = {k: (np.mean(v), np.std(v), np.min(v), np.max(v)) for k, v in metrics.items()}
+            metrics = {k: (np.mean(v), np.std(v), np.min(v), np.max(v)) for k, v in list(metrics.items())}
             copy_pasta = []
             for metric_name in ['xentropy_avg', 'perplexity', 'accuracy']:
                 metric_stats = metrics[metric_name]
                 copy_pasta += list(metric_stats)
-                print ('{}: {}'.format(metric_name, metric_stats))
+                print(('{}: {}'.format(metric_name, metric_stats)))
             print ('COPY PASTA:')
-            print (','.join([str(x) for x in copy_pasta]))
+            print((','.join([str(x) for x in copy_pasta])))
 
         # TODO: This currently only works for VERY specific model (delta time LSTM)
         if do_generate:
