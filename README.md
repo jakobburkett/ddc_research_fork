@@ -4,25 +4,7 @@
 
 Can be found in `requirements.txt`
 
-* click==7.1.2
-* essentia==2.1b6.dev234
-* Flask==1.1.4
-* funcsigs==1.0.2
-* itsdangerous==1.1.0
-* Jinja2==2.11.3
-* MarkupSafe==1.1.1
-* mock==3.0.5
-* numpy==1.16.6
-* protobuf==3.17.3
-* PyYAML==5.4.1
-* scipy==1.2.3
-* six==1.16.0
-* tensorflow==0.12.1
-* Werkzeug==1.0.1
-
-I could only find these packages through WSL so you'll probably need to use that or Linux
-
-### ALSO I didn't convert it to python3 so you must use python2
+# working on changing to python3
 
 # Running demo locally
 
@@ -30,14 +12,13 @@ I could only find these packages through WSL so you'll probably need to use that
 
 # Building dataset
 
-1. Make a directory named `data` under `~/ddc` (or change `scripts/var.sh` to point to a different directory)
-1. Under `data`, make directories `raw`, `json_raw` and `json_filt`
-1. Under `data/raw`, make directories for datasets `%dataset_name%`
-1. Navigate to `scripts/`
-1. Parse `.sm` files to JSON: `./smd_1_extract.sh %dataset_name%`
-1. Filter JSON files (removing mines, etc.): `./smd_2_filter.sh %dataset_name%`
-1. Split dataset 80/10/10: `./smd_3_dataset.sh %dataset_name%`
-1. Analyze dataset (e.g.): `./smd_4_analyze.sh %dataset_name%`
+1. ```cd ddc/data/raw/speirmix```
+2. download and extract/unzip speirmix from https://zenius-i-vanisher.com/v5.2/viewsimfilecategory.php?categoryid=897
+1. ```cd ../../../scripts```
+1. Parse `.sm` files to JSON: `./smd_1_extract.sh speirmix`
+1. Filter JSON files (removing mines, etc.): `./smd_2_filter.sh speirmix`
+1. Split dataset 80/10/10: `./smd_3_dataset.sh speirmix`
+1. Analyze dataset (e.g.): `./smd_4_analyze.sh speirmix`
 
 # Running training
 
