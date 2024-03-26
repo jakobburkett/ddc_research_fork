@@ -11,3 +11,5 @@ ddc/*.7z
 
 ddc/~ddc/*
 new_ddc/*
+
+.venv
