@@ -13,3 +13,4 @@ scipy==1.2.3
 six
 tensorflow
 Werkzeug==1.0.1
+tqdm

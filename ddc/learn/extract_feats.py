@@ -90,7 +90,8 @@ if __name__ == '__main__':
     # Iterate through packs extracting features
     for dataset_fp in args.dataset_fps:
         with open(dataset_fp, 'r') as f:
-            json_fps = f.read().splitlines()
+            # json_fps = f.read().splitlines()
+            json_fps = [fp for fp in f.read().splitlines() if fp != ""]
 
         for json_fp in json_fps:
             song_name = os.path.splitext(os.path.split(json_fp)[1])[0]

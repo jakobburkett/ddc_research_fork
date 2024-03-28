@@ -11,65 +11,67 @@ from onset_net2 import OnsetNet
 from util import *
 
 # Data
-tf.app.flags.DEFINE_string('train_txt_fp', '', 'Training dataset txt file with a list of pickled song files')
-tf.app.flags.DEFINE_string('valid_txt_fp', '', 'Eval dataset txt file with a list of pickled song files')
-tf.app.flags.DEFINE_bool('z_score', False, 'If true, train and test on z-score of training data')
-tf.app.flags.DEFINE_string('test_txt_fp', '', 'Test dataset txt file with a list of pickled song files')
-tf.app.flags.DEFINE_string('model_ckpt_fp', '', 'File path to model checkpoint if resuming or eval')
-tf.app.flags.DEFINE_string('export_feat_name', '', 'If set, export CNN features to this directory')
+tf.compat.v1.flags.DEFINE_string('train_txt_fp', '', 'Training dataset txt file with a list of pickled song files')
+tf.compat.v1.flags.DEFINE_string('valid_txt_fp', '', 'Eval dataset txt file with a list of pickled song files')
+tf.compat.v1.flags.DEFINE_bool('z_score', False, 'If true, train and test on z-score of training data')
+tf.compat.v1.flags.DEFINE_string('test_txt_fp', '', 'Test dataset txt file with a list of pickled song files')
+tf.compat.v1.flags.DEFINE_string('model_ckpt_fp', '', 'File path to model checkpoint if resuming or eval')
+tf.compat.v1.flags.DEFINE_string('export_feat_name', '', 'If set, export CNN features to this directory')
 
 # Features
-tf.app.flags.DEFINE_integer('audio_context_radius', 7, 'Past and future context per training example')
-tf.app.flags.DEFINE_integer('audio_nbands', 80, 'Number of bands per frame')
-tf.app.flags.DEFINE_integer('audio_nchannels', 3, 'Number of channels per frame')
-tf.app.flags.DEFINE_string('audio_select_channels', '', 'List of CSV audio channels. If non-empty, other channels excluded from model.')
-tf.app.flags.DEFINE_string('feat_diff_feet_to_id_fp', '', '')
-tf.app.flags.DEFINE_string('feat_diff_coarse_to_id_fp', '', '')
-tf.app.flags.DEFINE_bool('feat_diff_dipstick', '', '')
-tf.app.flags.DEFINE_string('feat_freetext_to_id_fp', '', '')
-tf.app.flags.DEFINE_bool('feat_beat_phase', '', '')
-tf.app.flags.DEFINE_bool('feat_beat_phase_cos', '', '')
+tf.compat.v1.flags.DEFINE_integer('audio_context_radius', 7, 'Past and future context per training example')
+tf.compat.v1.flags.DEFINE_integer('audio_nbands', 80, 'Number of bands per frame')
+tf.compat.v1.flags.DEFINE_integer('audio_nchannels', 3, 'Number of channels per frame')
+tf.compat.v1.flags.DEFINE_string('audio_select_channels', '', 'List of CSV audio channels. If non-empty, other channels excluded from model.')
+tf.compat.v1.flags.DEFINE_string('feat_diff_feet_to_id_fp', '', '')
+tf.compat.v1.flags.DEFINE_string('feat_diff_coarse_to_id_fp', '', '')
+
+# jakob note: i dont know what these are for, but the bool ones were default value of '', i replaced them with False
+tf.compat.v1.flags.DEFINE_bool('feat_diff_dipstick', False, '')
+tf.compat.v1.flags.DEFINE_string('feat_freetext_to_id_fp', '', '')
+tf.compat.v1.flags.DEFINE_bool('feat_beat_phase', False, '')
+tf.compat.v1.flags.DEFINE_bool('feat_beat_phase_cos', False, '')
 
 # Network params
-tf.app.flags.DEFINE_string('cnn_filter_shapes', '', 'CSV 3-tuples of filter shapes (time, freq, n)')
-tf.app.flags.DEFINE_string('cnn_pool', '', 'CSV 2-tuples of pool amounts (time, freq)')
-tf.app.flags.DEFINE_bool('cnn_rnn_zack', False, '')
-tf.app.flags.DEFINE_integer('zack_hack', 0, '')
-tf.app.flags.DEFINE_string('rnn_cell_type', 'lstm', '')
-tf.app.flags.DEFINE_integer('rnn_size', 0, '')
-tf.app.flags.DEFINE_integer('rnn_nlayers', 0, '')
-tf.app.flags.DEFINE_integer('rnn_nunroll', 1, '')
-tf.app.flags.DEFINE_float('rnn_keep_prob', 1.0, '')
-tf.app.flags.DEFINE_string('dnn_sizes', '', 'CSV sizes for dense layers')
-tf.app.flags.DEFINE_float('dnn_keep_prob', 1.0, '')
-tf.app.flags.DEFINE_string('dnn_nonlin', 'sigmoid', '')
+tf.compat.v1.flags.DEFINE_string('cnn_filter_shapes', '', 'CSV 3-tuples of filter shapes (time, freq, n)')
+tf.compat.v1.flags.DEFINE_string('cnn_pool', '', 'CSV 2-tuples of pool amounts (time, freq)')
+tf.compat.v1.flags.DEFINE_bool('cnn_rnn_zack', False, '')
+tf.compat.v1.flags.DEFINE_integer('zack_hack', 0, '')
+tf.compat.v1.flags.DEFINE_string('rnn_cell_type', 'lstm', '')
+tf.compat.v1.flags.DEFINE_integer('rnn_size', 0, '')
+tf.compat.v1.flags.DEFINE_integer('rnn_nlayers', 0, '')
+tf.compat.v1.flags.DEFINE_integer('rnn_nunroll', 1, '')
+tf.compat.v1.flags.DEFINE_float('rnn_keep_prob', 1.0, '')
+tf.compat.v1.flags.DEFINE_string('dnn_sizes', '', 'CSV sizes for dense layers')
+tf.compat.v1.flags.DEFINE_float('dnn_keep_prob', 1.0, '')
+tf.compat.v1.flags.DEFINE_string('dnn_nonlin', 'sigmoid', '')
 
 # Training params
-tf.app.flags.DEFINE_integer('batch_size', 256, 'Batch size for training')
-tf.app.flags.DEFINE_string('weight_strategy', 'rect', 'One of \'rect\' or \'last\'')
-tf.app.flags.DEFINE_bool('randomize_charts', False, '')
-tf.app.flags.DEFINE_bool('balanced_class', True, 'If true, balance classes, otherwise use prior.')
-tf.app.flags.DEFINE_integer('exclude_onset_neighbors', 0, 'If nonzero, excludes radius around true onsets from dataset as they may be misleading true neg.')
-tf.app.flags.DEFINE_bool('exclude_pre_onsets', False, 'If true, exclude all true neg before first onset.')
-tf.app.flags.DEFINE_bool('exclude_post_onsets', False, 'If true, exclude all true neg after last onset.')
-tf.app.flags.DEFINE_float('grad_clip', 0.0, 'Clip gradients to this value if greater than 0')
-tf.app.flags.DEFINE_string('opt', 'sgd', 'One of \'sgd\'')
-tf.app.flags.DEFINE_float('lr', 1.0, 'Learning rate')
-tf.app.flags.DEFINE_float('lr_decay_rate', 1.0, 'Multiply learning rate by this value every epoch')
-tf.app.flags.DEFINE_integer('lr_decay_delay', 0, '')
-tf.app.flags.DEFINE_integer('nbatches_per_ckpt', 100, 'Save model weights every N batches')
-tf.app.flags.DEFINE_integer('nbatches_per_eval', 10000, 'Evaluate model every N batches')
-tf.app.flags.DEFINE_integer('nepochs', 0, 'Number of training epochs, negative means train continuously')
-tf.app.flags.DEFINE_string('experiment_dir', '', 'Directory for temporary training files and model weights')
+tf.compat.v1.flags.DEFINE_integer('batch_size', 256, 'Batch size for training')
+tf.compat.v1.flags.DEFINE_string('weight_strategy', 'rect', 'One of \'rect\' or \'last\'')
+tf.compat.v1.flags.DEFINE_bool('randomize_charts', False, '')
+tf.compat.v1.flags.DEFINE_bool('balanced_class', True, 'If true, balance classes, otherwise use prior.')
+tf.compat.v1.flags.DEFINE_integer('exclude_onset_neighbors', 0, 'If nonzero, excludes radius around true onsets from dataset as they may be misleading true neg.')
+tf.compat.v1.flags.DEFINE_bool('exclude_pre_onsets', False, 'If true, exclude all true neg before first onset.')
+tf.compat.v1.flags.DEFINE_bool('exclude_post_onsets', False, 'If true, exclude all true neg after last onset.')
+tf.compat.v1.flags.DEFINE_float('grad_clip', 0.0, 'Clip gradients to this value if greater than 0')
+tf.compat.v1.flags.DEFINE_string('opt', 'sgd', 'One of \'sgd\'')
+tf.compat.v1.flags.DEFINE_float('lr', 1.0, 'Learning rate')
+tf.compat.v1.flags.DEFINE_float('lr_decay_rate', 1.0, 'Multiply learning rate by this value every epoch')
+tf.compat.v1.flags.DEFINE_integer('lr_decay_delay', 0, '')
+tf.compat.v1.flags.DEFINE_integer('nbatches_per_ckpt', 100, 'Save model weights every N batches')
+tf.compat.v1.flags.DEFINE_integer('nbatches_per_eval', 10000, 'Evaluate model every N batches')
+tf.compat.v1.flags.DEFINE_integer('nepochs', 0, 'Number of training epochs, negative means train continuously')
+tf.compat.v1.flags.DEFINE_string('experiment_dir', '', 'Directory for temporary training files and model weights')
 
 # Eval params
-tf.app.flags.DEFINE_string('eval_window_type', '', '')
-tf.app.flags.DEFINE_integer('eval_window_width', 0, '')
-tf.app.flags.DEFINE_integer('eval_align_tolerance', 2, '')
-tf.app.flags.DEFINE_string('eval_charts_export', '', '')
-tf.app.flags.DEFINE_string('eval_diff_coarse', '', '')
+tf.compat.v1.flags.DEFINE_string('eval_window_type', '', '')
+tf.compat.v1.flags.DEFINE_integer('eval_window_width', 0, '')
+tf.compat.v1.flags.DEFINE_integer('eval_align_tolerance', 2, '')
+tf.compat.v1.flags.DEFINE_string('eval_charts_export', '', '')
+tf.compat.v1.flags.DEFINE_string('eval_diff_coarse', '', '')
 
-FLAGS = tf.app.flags.FLAGS
+FLAGS = tf.compat.v1.flags.FLAGS
 dtype = tf.float32
 
 def main(_):
@@ -671,4 +673,4 @@ def eval_metrics_for_scores(y_true, y_scores, y_xentropies, y_scores_pkalgn, giv
         return metrics
 
 if __name__ == '__main__':
-    tf.app.run()
+    tf.compat.v1.app.run()

@@ -96,7 +96,7 @@ if __name__ == '__main__':
         dataset_name = name_from_fp(dataset_fp)
         dataset_out_names = []
         with open(dataset_fp, 'r') as f:
-            json_fps = f.read().splitlines()
+            json_fps = [fp for fp in f.read().splitlines() if fp != ""]
 
             for json_fp in json_fps:
                 json_name = name_from_fp(json_fp)

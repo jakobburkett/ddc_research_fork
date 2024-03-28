@@ -4,7 +4,7 @@ EXP_DIR=tmp/train_perplexity
 rm -rf ${EXP_DIR}
 mkdir -p ${EXP_DIR}
 
-python2 onset_train3.py \
+python onset_train3.py \
         --test_txt_fp=${SM_DIR}/data/chart_onset/${1}/mel80hop441/${1}_test.txt \
         --train_txt_fp=${SM_DIR}/data/chart_onset/${1}/mel80hop441/${1}_train.txt \
         --valid_txt_fp=${SM_DIR}/data/chart_onset/${1}/mel80hop441/${1}_valid.txt \

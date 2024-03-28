@@ -4,7 +4,7 @@ EXP_DIR=tmp/train_sym
 rm -rf ${EXP_DIR}
 mkdir -p ${EXP_DIR}
 
-python2 sym_train3.py \
+python sym_train3.py \
         --test_txt_fp=${SM_DIR}/data/chart_sym/${1}/symbolic/${1}_test.txt \
         --train_txt_fp=${SM_DIR}/data/chart_sym/${1}/symbolic/${1}_train.txt \
         --valid_txt_fp=${SM_DIR}/data/chart_sym/${1}/symbolic/${1}_valid.txt \
