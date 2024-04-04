@@ -4,13 +4,13 @@ TRAIN_DIR=tmp/ngram
 rm -rf ${TRAIN_DIR}
 mkdir -p ${TRAIN_DIR}
 
-python2 ngram.py \
+python ngram.py \
 	${SM_DIR}/data/json_filt/${1}_train.txt \
 	${TRAIN_DIR}/model_${2}.pkl \
 	--k=${2} \
 	--task=train
 
-python2 ngram.py \
+python ngram.py \
 	${SM_DIR}/data/json_filt/${1}_test.txt \
 	${TRAIN_DIR}/model_${2}.pkl \
 	--k=${2} \
