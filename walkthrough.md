@@ -1,7 +1,7 @@
 # Walkthrough the code as I run it
 
 I'm gonna try my best to understand all of the code in here.
-I'll go step by step through each file and what I think is going on.
+I'll go step by step through each file and write what I think is going on.
 
 ## Building Dataset
 1. `./smd_1_extract.sh speirmix` 
