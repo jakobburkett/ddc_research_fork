@@ -1,6 +1,6 @@
 source sml_0_push.sh
 
-python2 create_charts.py \
+python create_charts.py \
 	${SMDATA_DIR}/json_filt/${1}_train.txt \
 	${SMDATA_DIR}/json_filt/${1}_valid.txt \
 	${SMDATA_DIR}/json_filt/${1}_test.txt \
