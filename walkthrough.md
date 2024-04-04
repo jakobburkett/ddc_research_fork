@@ -11,4 +11,5 @@ I'll go step by step through each file and write what I think is going on.
        2. change current dir to ../dataset (prior dir on stack)
     2. Runs `extract_json.py` with the data directory + the argument we have on `./smd_1_extract.sh`
        1. `extract_json.py` needs a directory of the packs and a directory for its json output as arguments
-       2.  
+       2. `extract_json.py` parses the StepMania files and turns them into a structured JSON format
+       3. `extract_json.py` allows for a user to change the ITG
