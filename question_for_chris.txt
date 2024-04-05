@@ -1,1 +1,1 @@
-1. what is ${2} doing in smd_2_filter.sh?
+1. what is ${2} doing in smd_2_filter.sh and again on smd_4_analyze.sh?
