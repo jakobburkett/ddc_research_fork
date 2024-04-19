@@ -32,10 +32,11 @@ I'll go step by step through each file and write what I think is going on.
       
 4. `smd_4_analyze.sh speirmix`
     1. Runs `smd_0_push.sh` in current shell
-    1. Runs `analyze_json.py` with the data/json_filt/speirmix directory as an argument
-       1. goes through the dataset and 'analyzes' by calculuating difficulties, averages, etc.
+    2. Runs `analyze_json.py` with the data/json_filt/speirmix directory as an argument
+       1. goes through the dataset and 'analyzes' by calculating difficulties, averages, etc.
 
 ## Training Model
 1. `./sml_onset_0_extract.sh`
     1. Runs `sml_0_push.sh` in current shell
-    
+    2. Runs `extract_feats.py` with the speirmix.txt generated at the end of smd_3_dataset
+    3. 
