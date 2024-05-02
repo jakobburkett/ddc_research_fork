@@ -61,27 +61,27 @@ class SymNet:
         # input sequence
         if sym_in_type == 'onehot':
             in_len = len(_IN_SPECIAL) + int(math.pow(sym_narrowclasses, sym_narrows))
-            syms_unrolled = tf.placeholder(tf.int64, shape=[batch_size, in_nunroll], name='syms')
+            syms_unrolled = tf.compat.v1.placeholder(tf.int64, shape=[batch_size, in_nunroll], name='syms')
         elif sym_in_type == 'bagofarrows':
             in_len = len(_IN_SPECIAL) + (sym_narrows * sym_narrowclasses)
-            syms_unrolled = tf.placeholder(dtype, shape=[batch_size, in_nunroll, in_len], name='syms')
+            syms_unrolled = tf.compat.v1.placeholder(dtype, shape=[batch_size, in_nunroll, in_len], name='syms')
         else:
             raise NotImplementedError()
 
         # other/audio feats
-        feats_other_unrolled = tf.placeholder(dtype, shape=[batch_size, in_nunroll, other_nfeats], name='feats_other')
-        feats_audio_unrolled = tf.placeholder(dtype, shape=[batch_size, in_nunroll, audio_context_len, audio_nbands, audio_nchannels], name='feats_audio')
+        feats_other_unrolled = tf.compat.v1.placeholder(dtype, shape=[batch_size, in_nunroll, other_nfeats], name='feats_other')
+        feats_audio_unrolled = tf.compat.v1.placeholder(dtype, shape=[batch_size, in_nunroll, audio_context_len, audio_nbands, audio_nchannels], name='feats_audio')
 
         # targets
         if mode != 'gen':
             if sym_out_type == 'onehot':
-                targets_unrolled = tf.placeholder(tf.int64, shape=[batch_size, out_nunroll], name='target_seq')
+                targets_unrolled = tf.compat.v1.placeholder(tf.int64, shape=[batch_size, out_nunroll], name='target_seq')
             else:
                 raise NotImplementedError()
         if mode == 'train':
             target_weights_unrolled = tf.ones([batch_size, out_nunroll], dtype)
         elif mode == 'eval':
-            target_weights_unrolled = tf.placeholder(dtype, shape=[batch_size, out_nunroll], name='target_weights')
+            target_weights_unrolled = tf.compat.v1.placeholder(dtype, shape=[batch_size, out_nunroll], name='target_weights')
 
         # reshape inputs to remove nunroll dim; will briefly restore later during RNN if necessary
         if sym_in_type == 'onehot':
@@ -106,13 +106,13 @@ class SymNet:
         with tf.device('/cpu:0'):
             # embed
             if sym_embedding_size > 0:
-                with tf.variable_scope('sym_embedding'):
+                with tf.compat.v1.variable_scope('sym_embedding'):
                     if sym_in_type == 'onehot':
-                        embed_w = tf.get_variable('W', [in_len, sym_embedding_size])
+                        embed_w = tf.compat.v1.get_variable('W', [in_len, sym_embedding_size])
                         feats_sym = tf.nn.embedding_lookup(params=embed_w, ids=syms)
                     elif sym_in_type == 'bagofarrows':
-                        embed_w = tf.get_variable('W', [in_len, sym_embedding_size])
-                        embed_b = tf.get_variable('b', [sym_embedding_size])
+                        embed_w = tf.compat.v1.get_variable('W', [in_len, sym_embedding_size])
+                        embed_b = tf.compat.v1.get_variable('b', [sym_embedding_size])
                         feats_sym = tf.nn.bias_add(tf.matmul(syms, embed_w), embed_b)
                 nfeats_sym = sym_embedding_size
             # noembed
@@ -130,9 +130,9 @@ class SymNet:
             nfilt_last = audio_nchannels
             for i, ((ntime, nband, nfilt), (ptime, pband)) in enumerate(zip(cnn_filter_shapes, cnn_pool)):
                 layer_name = 'cnn_{}'.format(i)
-                with tf.variable_scope(layer_name):
-                    filters = tf.get_variable('filters', [ntime, nband, nfilt_last, nfilt], initializer=cnn_init, dtype=dtype)
-                    biases = tf.get_variable('biases', [nfilt], initializer=tf.constant_initializer(0.1), dtype=dtype)
+                with tf.compat.v1.variable_scope(layer_name):
+                    filters = tf.compat.v1.get_variable('filters', [ntime, nband, nfilt_last, nfilt], initializer=cnn_init, dtype=dtype)
+                    biases = tf.compat.v1.get_variable('biases', [nfilt], initializer=tf.constant_initializer(0.1), dtype=dtype)
                 conv = tf.nn.conv2d(input=layer_last, filters=filters, strides=[1, 1, 1, 1], padding='VALID')
                 biased = tf.nn.bias_add(conv, biases)
                 convolved = tf.nn.relu(biased)
@@ -157,9 +157,9 @@ class SymNet:
 
         # Reduce CNN dimensionality
         if cnn_dim_reduction_size >= 0:
-            with tf.variable_scope('cnn_dim_reduction'):
-                cnn_dim_reduction_W = tf.get_variable('W', [nfeats_conv, cnn_dim_reduction_size], initializer=cnn_dim_reduction_init, dtype=dtype)
-                cnn_dim_reduction_b = tf.get_variable('b', [cnn_dim_reduction_size], initializer=tf.constant_initializer(0.0), dtype=dtype)
+            with tf.compat.v1.variable_scope('cnn_dim_reduction'):
+                cnn_dim_reduction_W = tf.compat.v1.get_variable('W', [nfeats_conv, cnn_dim_reduction_size], initializer=cnn_dim_reduction_init, dtype=dtype)
+                cnn_dim_reduction_b = tf.compat.v1.get_variable('b', [cnn_dim_reduction_size], initializer=tf.constant_initializer(0.0), dtype=dtype)
 
                 nfeats_conv = cnn_dim_reduction_size
                 feats_conv = tf.nn.bias_add(tf.matmul(feats_conv, cnn_dim_reduction_W), cnn_dim_reduction_b)
@@ -180,43 +180,50 @@ class SymNet:
         if do_rnn:
             nfeats_nosym = nfeats_conv + other_nfeats
             # TODO: should this be on cpu? (batch_size, nunroll, sym_embedding_size + nfeats)
-            feats_nosym = tf.concat(1, [feats_conv, feats_other])
+            # feats_nosym = tf.concat(1, [feats_conv, feats_other])
+            feats_nosym = tf.concat([feats_conv, feats_other], 1)
 
-            with tf.variable_scope('rnn_proj'):
-                rnn_proj_sym_w = tf.get_variable('W', [nfeats_sym, rnn_size], initializer=rnn_proj_init, dtype=dtype)
-                rnn_proj_nosym_w = tf.get_variable('nosym_W', [nfeats_nosym, rnn_size], initializer=rnn_proj_init, dtype=dtype)
-                rnn_proj_b = tf.get_variable('b', [rnn_size], initializer=tf.constant_initializer(0.0), dtype=dtype)
+            with tf.compat.v1.variable_scope('rnn_proj'):
+                rnn_proj_sym_w = tf.compat.v1.get_variable('W', [nfeats_sym, rnn_size], initializer=rnn_proj_init, dtype=dtype)
+                rnn_proj_nosym_w = tf.compat.v1.get_variable('nosym_W', [nfeats_nosym, rnn_size], initializer=rnn_proj_init, dtype=dtype)
+                rnn_proj_b = tf.compat.v1.get_variable('b', [rnn_size], initializer=tf.constant_initializer(0.0), dtype=dtype)
 
             rnn_inputs_sym = tf.matmul(feats_sym, rnn_proj_sym_w)
             rnn_inputs_nosym = tf.matmul(feats_nosym, rnn_proj_nosym_w)
             rnn_inputs_prebias = tf.add(rnn_inputs_sym, rnn_inputs_nosym)
             rnn_inputs = tf.nn.bias_add(rnn_inputs_prebias, rnn_proj_b)
             rnn_inputs = tf.reshape(rnn_inputs, shape=[batch_size, nunroll, rnn_size])
-            rnn_inputs = tf.split(1, nunroll, rnn_inputs)
+            # rnn_inputs = tf.split(1, nunroll, rnn_inputs)
+            rnn_inputs = tf.split(rnn_inputs, nunroll, 1)
             rnn_inputs = [tf.squeeze(input_, [1]) for input_ in rnn_inputs]
 
             if rnn_cell_type == 'rnn':
-                cell_fn = tf.nn.rnn_cell.BasicRNNCell
+                cell_fn = tf.compat.v1.nn.rnn_cell.BasicRNNCell
             elif rnn_cell_type == 'gru':
-                cell_fn = tf.nn.rnn_cell.GRUCell
+                cell_fn = tf.compat.v1.nn.rnn_cell.GRUCell
             elif rnn_cell_type == 'lstm':
-                cell_fn = tf.nn.rnn_cell.BasicLSTMCell
+                # cell_fn = tf.compat.v1.nn.rnn_cell.BasicLSTMCell
+                cell_fn = tf.keras.layers.LSTMCell
             else:
                 raise NotImplementedError()
             cell = cell_fn(rnn_size)
 
             if mode == 'train' and rnn_keep_prob < 1.0:
-                cell = tf.nn.rnn_cell.DropoutWrapper(cell, output_keep_prob=rnn_keep_prob)
+                cell = tf.compat.v1.nn.rnn_cell.DropoutWrapper(cell, output_keep_prob=rnn_keep_prob)
 
             if rnn_nlayers > 1:
-                cell = tf.nn.rnn_cell.MultiRNNCell([cell] * rnn_nlayers)
+                # cell = tf.compat.v1.nn.rnn_cell.MultiRNNCell([cell] * rnn_nlayers)
+                cell = tf.keras.layers.StackedRNNCells([cell_fn(rnn_size) for _ in range(rnn_nlayers)])
                 print(cell)
 
-            initial_state = cell.zero_state(batch_size, dtype)
+            rnn_layer = tf.keras.layers.RNN(cell, return_sequences=True, return_state=True)
+            initial_state = rnn_layer.get_initial_state(batch_size=batch_size)
+
+            # initial_state = cell.zero_state(batch_size, dtype)
 
             # RNN
             # TODO: weight init
-            with tf.variable_scope('rnn_unroll'):
+            with tf.compat.v1.variable_scope('rnn_unroll'):
                 state = initial_state
                 outputs = []
                 for i in range(nunroll):
@@ -229,7 +236,8 @@ class SymNet:
                     outputs.append(cell_output)
                 final_state = state
 
-            rnn_output_inspect = tf.concat(1, outputs)
+            # rnn_output_inspect = tf.concat(1, outputs)
+            rnn_output_inspect = tf.concat(outputs, 1)
             print(rnn_output_inspect)
 
             rnn_output = tf.reshape(rnn_output_inspect, [batch_size * nunroll, rnn_size])
@@ -252,9 +260,9 @@ class SymNet:
             last_layer_size = rnn_output_size
             for i, layer_size in enumerate(dnn_sizes):
                 layer_name = 'dnn_{}'.format(i)
-                with tf.variable_scope(layer_name):
-                    dnn_w = tf.get_variable('W', shape=[last_layer_size, layer_size], initializer=dnn_init, dtype=dtype)
-                    dnn_b = tf.get_variable('b', shape=[layer_size], initializer=tf.constant_initializer(0.0), dtype=dtype)
+                with tf.compat.v1.variable_scope(layer_name):
+                    dnn_w = tf.compat.v1.get_variable('W', shape=[last_layer_size, layer_size], initializer=dnn_init, dtype=dtype)
+                    dnn_b = tf.compat.v1.get_variable('b', shape=[layer_size], initializer=tf.constant_initializer(0.0), dtype=dtype)
                 projected = tf.nn.bias_add(tf.matmul(last_layer, dnn_w), dnn_b)
                 # TODO: argument nonlinearity, change bias to 0.1 if relu
                 last_layer = tf.nn.sigmoid(projected)
@@ -268,11 +276,11 @@ class SymNet:
 
             dnn_output_inspect = dnn_output
 
-        with tf.variable_scope('sym_rnn_output'):
+        with tf.compat.v1.variable_scope('sym_rnn_output'):
             if sym_out_type == 'onehot':
                 # Output projection
-                softmax_w = tf.get_variable('softmax_w', [dnn_output_size, out_len])
-                softmax_b = tf.get_variable('softmax_b', [out_len])
+                softmax_w = tf.compat.v1.get_variable('softmax_w', [dnn_output_size, out_len])
+                softmax_b = tf.compat.v1.get_variable('softmax_b', [out_len])
 
                 # Calculate logits, shape is [batch_size * nunroll, iolen]
                 logits = tf.nn.bias_add(tf.matmul(dnn_output, softmax_w), softmax_b)
@@ -284,8 +292,8 @@ class SymNet:
                 predictions_inspect = tf.reshape(predictions, [batch_size, out_nunroll])
             elif sym_out_type == 'bagofarrows':
                 raise NotImplementedError()
-                softmax_w = tf.get_variable('softmax_w', [rnn_size, out_len])
-                softmax_b = tf.get_variable('softmax_b', [out_len])
+                softmax_w = tf.compat.v1.get_variable('softmax_w', [rnn_size, out_len])
+                softmax_b = tf.compat.v1.get_variable('softmax_b', [out_len])
 
                 # Concat outputs to (batch_size, nunroll * rnn_size)
                 output = tf.concat(1, outputs)

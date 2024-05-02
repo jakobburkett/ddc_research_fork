@@ -22,7 +22,7 @@ from util import apply_z_norm, make_onset_feature_context
 from extract_feats import extract_mel_feats
 
 def load_sp_model(sp_ckpt_fp, sess, batch_size=128):
-    with tf.variable_scope('model_sp'):
+    with tf.compat.v1.variable_scope('model_sp'):
         model_sp = OnsetNet(
             mode='gen',
             batch_size=batch_size,
@@ -49,7 +49,7 @@ def load_sp_model(sp_ckpt_fp, sess, batch_size=128):
             opt=None,
             export_feat_name=None,
             zack_hack=0)
-    filtered_vars = [v for v in tf.global_variables() if 'model_sp' in v.name]
+    filtered_vars = [v for v in tf.compat.v1.global_variables() if 'model_sp' in v.name]
     model_sp_vars = list()
     for v in filtered_vars:
         model_sp_vars.append(v)
@@ -65,7 +65,7 @@ def load_sp_model(sp_ckpt_fp, sess, batch_size=128):
     # """)
     # for v in model_sp_vars:
     #     print(v)
-    saver = tf.train.Saver(model_sp_vars)
+    saver = tf.compat.v1.train.Saver(model_sp_vars)
     # saver = tf.train.import_meta_graph('./infer/tmp/train/onset_net_early_stop_fscore-20000.meta')
     # print(tf.compat.v1.global_variables())
     # print(saver)
@@ -76,7 +76,7 @@ def load_sp_model(sp_ckpt_fp, sess, batch_size=128):
     return model_sp
 
 def load_ss_model(ss_ckpt_fp, sess):
-    with tf.variable_scope('model_ss'):
+    with tf.compat.v1.variable_scope('model_ss'):
         model_ss = SymNet(
             mode='gen',
             batch_size=1,
@@ -107,13 +107,13 @@ def load_ss_model(ss_ckpt_fp, sess):
             dnn_init=None,
             dnn_keep_prob=1.0
         )
-    # init = tf.global_variables_initializer()
+    # init = tf.compat.v1.global_variables_initializer()
     # sess.run(init)
-    filtered_vars = [v for v in tf.global_variables() if 'model_ss' in v.name]
+    filtered_vars = [v for v in tf.compat.v1.global_variables() if 'model_ss' in v.name]
     model_ss_vars = list()
     for v in filtered_vars:
         model_ss_vars.append(v)
-    # model_ss_vars = {var.op.name: var for var in tf.global_variables()}
+    # model_ss_vars = {var.op.name: var for var in tf.compat.v1.global_variables()}
     # print("""
     
     
@@ -141,7 +141,7 @@ def load_ss_model(ss_ckpt_fp, sess):
     # model_ss_vars.append('Tensor("model_ss/rnn_unroll/multi_rnn_cell/cell_0/basic_lstm_cell/kernal/read:0", shape=(256, 512), dtype=float32)')
     # for v in model_ss_vars:
     #     print(v)
-    saver = tf.train.Saver(model_ss_vars)
+    saver = tf.compat.v1.train.Saver(model_ss_vars)
     saver.restore(sess, './infer/server_aux/model_ss-23628')
     # saver.restore(sess, './learn/tmp/train_sym/onset_net_train-261000')
     return model_ss
@@ -473,12 +473,12 @@ if __name__ == '__main__':
 
     global SESS
     graph = tf.Graph()
-    config = tf.ConfigProto()
+    config = tf.compat.v1.ConfigProto()
     config.log_device_placement = True
     config.allow_soft_placement = True
     config.gpu_options.allow_growth = True
     #config.gpu_options.per_process_gpu_memory_fraction = 1.0
-    SESS = tf.Session(graph=graph, config=config)
+    SESS = tf.compat.v1.Session(graph=graph, config=config)
 
     global NORM
     data = open(ARGS.norm_pkl_fp).read().replace('\r\n', '\n')
@@ -486,7 +486,7 @@ if __name__ == '__main__':
     open(dst, "w").write(data)
     print ('Loading band norms')
     with open(dst, 'rb') as f:
-        NORM = pickle.load(f)
+        NORM = pickle.load(f, encoding='latin1')
 
     global ANALYZERS
     print ('Creating Mel analyzers')

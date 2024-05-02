@@ -48,10 +48,11 @@ def np_pad(x, pad_to, value=0, axis=-1):
 def open_dataset_fps(*args):
     datasets = []
     for data_fp in args:
+        print("Loading dataset from", data_fp)
         if not data_fp:
             datasets.append([])
+            print("in if")
             continue
-
         with open(data_fp, 'r') as f:
             song_fps = f.read().split()
         dataset = []

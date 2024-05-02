@@ -22,7 +22,7 @@ from util import apply_z_norm, make_onset_feature_context
 from extract_feats import extract_mel_feats
 
 def load_sp_model(sp_ckpt_fp, sess, batch_size=128):
-    with tf.variable_scope('model_sp'):
+    with tf.compat.v1.variable_scope('model_sp'):
         model_sp = OnsetNet(
             mode='gen',
             batch_size=batch_size,
@@ -58,7 +58,7 @@ def load_sp_model(sp_ckpt_fp, sess, batch_size=128):
     return model_sp
 
 def load_ss_model(ss_ckpt_fp, sess):
-    with tf.variable_scope('model_ss'):
+    with tf.compat.v1.variable_scope('model_ss'):
         model_ss = SymNet(
             mode='gen',
             batch_size=1,
@@ -395,12 +395,12 @@ if __name__ == '__main__':
 
     global SESS
     graph = tf.Graph()
-    config = tf.ConfigProto()
+    config = tf.compat.v1.ConfigProto()
     config.log_device_placement = True
     config.allow_soft_placement = True
     config.gpu_options.allow_growth = True
     #config.gpu_options.per_process_gpu_memory_fraction = 1.0
-    SESS = tf.Session(graph=graph, config=config)
+    SESS = tf.compat.v1.Session(graph=graph, config=config)
 
     global NORM
     data = open(ARGS.norm_pkl_fp).read().replace('\r\n', '\n')
@@ -408,7 +408,7 @@ if __name__ == '__main__':
     open(dst, "w").write(data)
     print ('Loading band norms')
     with open(dst, 'rb') as f:
-        NORM = pickle.load(f)
+        NORM = pickle.load(f, encoding='latin1')
 
     global ANALYZERS
     print ('Creating Mel analyzers')

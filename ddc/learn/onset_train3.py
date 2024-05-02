@@ -75,6 +75,7 @@ FLAGS = tf.compat.v1.flags.FLAGS
 dtype = tf.float32
 
 def main(_):
+    print('Starting onset training')
     assert FLAGS.experiment_dir
     do_train = FLAGS.nepochs != 0 and bool(FLAGS.train_txt_fp)
     do_valid = bool(FLAGS.valid_txt_fp)
@@ -86,6 +87,7 @@ def main(_):
     print('Loading data')
     train_data, valid_data, test_data = open_dataset_fps(FLAGS.train_txt_fp, FLAGS.valid_txt_fp, FLAGS.test_txt_fp)
 
+    print("here")
     # Select channels
     if FLAGS.audio_select_channels:
         channels = stride_csv_arg_list(FLAGS.audio_select_channels, 1, int)

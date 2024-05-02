@@ -51,13 +51,13 @@ class OnsetNet:
         export_feat_tensors = {}
 
         # Input tensors
-        feats_audio_nunroll = tf.placeholder(dtype, shape=[batch_size, rnn_nunroll + zack_hack, audio_context_len, audio_nbands, audio_nchannels], name='feats_audio')
-        feats_other_nunroll = tf.placeholder(dtype, shape=[batch_size, rnn_nunroll, nfeats], name='feats_other')
+        feats_audio_nunroll = tf.compat.v1.placeholder(dtype, shape=[batch_size, rnn_nunroll + zack_hack, audio_context_len, audio_nbands, audio_nchannels], name='feats_audio')
+        feats_other_nunroll = tf.compat.v1.placeholder(dtype, shape=[batch_size, rnn_nunroll, nfeats], name='feats_other')
         print(('feats_audio: {}'.format(feats_audio_nunroll.get_shape())))
         print(('feats_other: {}'.format(feats_other_nunroll.get_shape())))
 
         if mode != 'gen':
-            targets_nunroll = tf.placeholder(dtype, shape=[batch_size, rnn_nunroll])
+            targets_nunroll = tf.compat.v1.placeholder(dtype, shape=[batch_size, rnn_nunroll])
             # TODO: tf.ones acts as an overridable placeholder but this is still awkward
             target_weights_nunroll = tf.ones([batch_size, rnn_nunroll], dtype)
 
@@ -79,10 +79,10 @@ class OnsetNet:
             nfilt_last = audio_nchannels
             for i, ((ntime, nband, nfilt), (ptime, pband)) in enumerate(zip(cnn_filter_shapes, cnn_pool)):
                 layer_name = 'cnn_{}'.format(i)
-                with tf.variable_scope(layer_name):
-                    filters = tf.get_variable('filters', [ntime, nband, nfilt_last, nfilt], initializer=cnn_init, dtype=dtype)
-                    # filters = tf.get_variable('filters', [ntime, nband, nfilt_last, nfilt], initializer=None, dtype=dtype)
-                    biases = tf.get_variable('biases', [nfilt], initializer=tf.constant_initializer(0.1), dtype=dtype)
+                with tf.compat.v1.variable_scope(layer_name):
+                    filters = tf.compat.v1.get_variable('filters', [ntime, nband, nfilt_last, nfilt], initializer=cnn_init, dtype=dtype)
+                    # filters = tf.compat.v1.get_variable('filters', [ntime, nband, nfilt_last, nfilt], initializer=None, dtype=dtype)
+                    biases = tf.compat.v1.get_variable('biases', [nfilt], initializer=tf.constant_initializer(0.1), dtype=dtype)
                 if cnn_rnn_zack:
                     padding = 'SAME'
                 else:
@@ -117,8 +117,8 @@ class OnsetNet:
         nfeats_tot = nfeats_conv + nfeats
         #print (nfeats_conv)
         #print (feats_conv)
-        #feats_all = tf.concat([feats_conv, feats_other], 1)     
-        feats_all = tf.concat(1, [feats_conv, feats_other])
+        feats_all = tf.concat([feats_conv, feats_other], 1)     
+        # feats_all = tf.concat(1, [feats_conv, feats_other])
         print(('feats_cnn: {}'.format(feats_conv.get_shape())))
         print(('feats_all: {}'.format(feats_all.get_shape())))
 
@@ -126,9 +126,9 @@ class OnsetNet:
         rnn_output = feats_all
         rnn_output_size = nfeats_tot
         if do_rnn:
-            with tf.variable_scope('rnn_proj'):
-                rnn_proj_w = tf.get_variable('W', [nfeats_tot, rnn_size], initializer=tf.compat.v1.keras.initializers.VarianceScaling(scale=1.0, dtype=dtype, distribution="uniform"), dtype=dtype)
-                rnn_proj_b = tf.get_variable('b', [rnn_size], initializer=tf.constant_initializer(0.0), dtype=dtype)
+            with tf.compat.v1.variable_scope('rnn_proj'):
+                rnn_proj_w = tf.compat.v1.get_variable('W', [nfeats_tot, rnn_size], initializer=tf.compat.v1.keras.initializers.VarianceScaling(scale=1.0, dtype=dtype, distribution="uniform"), dtype=dtype)
+                rnn_proj_b = tf.compat.v1.get_variable('b', [rnn_size], initializer=tf.constant_initializer(0.0), dtype=dtype)
 
             rnn_inputs = tf.nn.bias_add(tf.matmul(feats_all, rnn_proj_w), rnn_proj_b)
             rnn_inputs = tf.reshape(rnn_inputs, [batch_size, rnn_nunroll, rnn_size])
@@ -155,7 +155,7 @@ class OnsetNet:
 
             # RNN
             # TODO: weight init
-            with tf.variable_scope('rnn_unroll'):
+            with tf.compat.v1.variable_scope('rnn_unroll'):
                 state = initial_state
                 outputs = []
                 for i in range(rnn_nunroll):
@@ -177,9 +177,9 @@ class OnsetNet:
             last_layer_size = rnn_output_size
             for i, layer_size in enumerate(dnn_sizes):
                 layer_name = 'dnn_{}'.format(i)
-                with tf.variable_scope(layer_name):
-                    dnn_w = tf.get_variable('W', shape=[last_layer_size, layer_size], initializer=dnn_init, dtype=dtype)
-                    dnn_b = tf.get_variable('b', shape=[layer_size], initializer=tf.constant_initializer(0.0), dtype=dtype)
+                with tf.compat.v1.variable_scope(layer_name):
+                    dnn_w = tf.compat.v1.get_variable('W', shape=[last_layer_size, layer_size], initializer=dnn_init, dtype=dtype)
+                    dnn_b = tf.compat.v1.get_variable('b', shape=[layer_size], initializer=tf.constant_initializer(0.0), dtype=dtype)
                 projected = tf.nn.bias_add(tf.matmul(last_layer, dnn_w), dnn_b)
                 # TODO: argument nonlinearity, change bias to 0.1 if relu
                 if dnn_nonlin == 'tanh':
@@ -201,9 +201,9 @@ class OnsetNet:
             dnn_output_size = last_layer_size
 
         # Logistic regression
-        with tf.variable_scope('logit') as scope:
-            logit_w = tf.get_variable('W', shape=[dnn_output_size, 1], initializer=tf.truncated_normal_initializer(stddev=1.0 / dnn_output_size, dtype=dtype), dtype=dtype)
-            logit_b = tf.get_variable('b', shape=[1], initializer=tf.constant_initializer(0.0), dtype=dtype)
+        with tf.compat.v1.variable_scope('logit') as scope:
+            logit_w = tf.compat.v1.get_variable('W', shape=[dnn_output_size, 1], initializer=tf.compat.v1.truncated_normal_initializer(stddev=1.0 / dnn_output_size, dtype=dtype), dtype=dtype)
+            logit_b = tf.compat.v1.get_variable('b', shape=[1], initializer=tf.constant_initializer(0.0), dtype=dtype)
         logits = tf.squeeze(tf.nn.bias_add(tf.matmul(dnn_output, logit_w), logit_b), axis=[1])
         prediction = tf.nn.sigmoid(logits)
         prediction_inspect = tf.reshape(prediction, [batch_size, rnn_nunroll])

@@ -46,16 +46,18 @@ def np_pad(x, pad_to, value=0, axis=-1):
     return np.pad(x, pad_width=pad, mode='constant', constant_values=value)
 
 def open_dataset_fps(*args):
+    print("Loading datasets...")
     datasets = []
     for data_fp in args:
+        print("Loading dataset from", data_fp)
         if not data_fp:
             datasets.append([])
             continue
-
         with open(data_fp, 'r') as f:
             song_fps = f.read().split()
         dataset = []
         for song_fp in song_fps:
+            print("Loading song from", song_fp)
             with open(song_fp, 'rb') as f:
                 dataset.append(pickle.load(f))
         datasets.append(dataset)
