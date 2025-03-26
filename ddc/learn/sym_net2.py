@@ -180,7 +180,7 @@ class SymNet:
         if do_rnn:
             nfeats_nosym = nfeats_conv + other_nfeats
             # TODO: should this be on cpu? (batch_size, nunroll, sym_embedding_size + nfeats)
-            feats_nosym = tf.concat_v2([feats_conv, feats_other], axis=1)
+            feats_nosym = tf.concat([feats_conv, feats_other], axis=1)
 
             with tf.variable_scope('rnn_proj'):
                 rnn_proj_sym_w = tf.get_variable('W', [nfeats_sym, rnn_size], initializer=rnn_proj_init, dtype=dtype)
@@ -225,13 +225,13 @@ class SymNet:
                     outputs.append(cell_output)
                 final_state = state
 
-            rnn_output_inspect = tf.concat_v2(outputs, axis=1)
+            rnn_output_inspect = tf.concat(outputs, axis=1)
 
             rnn_output = tf.reshape(rnn_output_inspect, [batch_size * nunroll, rnn_size])
             rnn_output_size = rnn_size
         else:
             nfeats_tot = nfeats_sym + nfeats_conv + other_nfeats
-            feats_all = tf.concat_v2([feats_sym, feats_conv, feats_other], axis=1)
+            feats_all = tf.concat([feats_sym, feats_conv, feats_other], axis=1)
             rnn_output = tf.reshape(feats_all, shape=[batch_size, in_nunroll * nfeats_tot])
             rnn_output_size = in_nunroll * nfeats_tot
         print(('rnn_output: {}'.format(rnn_output.get_shape())))

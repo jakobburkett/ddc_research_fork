@@ -213,7 +213,7 @@ class OnsetChart(Chart):
         #     with open('delete_these.txt', 'a') as f:
         #         f.write(str(self.song_metadata))
         #     return random.sample(blanks, blanks)
-        assert n <= len(blanks)
+        n = min(n, len(blanks))  # Prevents requesting more samples than available
         return random.sample(blanks, n)
 
     def get_subsequence(self,

@@ -113,7 +113,7 @@ class OnsetNet:
             nfeats_conv = reduce(lambda x, y: x * y, [int(x) for x in cnn_output.get_shape()[-3:]])
         feats_conv = tf.reshape(cnn_output, [batch_size * rnn_nunroll, nfeats_conv])
         nfeats_tot = nfeats_conv + nfeats
-        feats_all = tf.concat_v2([feats_conv, feats_other], axis=1)
+        feats_all = tf.concat([feats_conv, feats_other], axis=1)
         print('feats_cnn: {}'.format(feats_conv.get_shape()))
         print('feats_all: {}'.format(feats_all.get_shape()))
 
@@ -160,7 +160,7 @@ class OnsetNet:
                     outputs.append(cell_output)
                 final_state = state
 
-            rnn_output = tf.reshape(tf.concat_v2(outputs, axis=1), [batch_size * rnn_nunroll, rnn_size])
+            rnn_output = tf.reshape(tf.concat(outputs, axis=1), [batch_size * rnn_nunroll, rnn_size])
             rnn_output_size = rnn_size
         print('rnn_output: {}'.format(rnn_output.get_shape()))
 
@@ -207,7 +207,7 @@ class OnsetNet:
 
         # Compute loss
         if mode != 'gen':
-            neg_log_lhoods = tf.nn.sigmoid_cross_entropy_with_logits(logits, targets)
+            neg_log_lhoods = tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=targets)
             if target_weight_strategy == 'rect':
                 avg_neg_log_lhood = tf.reduce_mean(neg_log_lhoods)
             else:

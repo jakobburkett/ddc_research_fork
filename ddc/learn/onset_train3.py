@@ -47,7 +47,7 @@ tf.compat.v1.flags.DEFINE_float('dnn_keep_prob', 1.0, '')
 tf.compat.v1.flags.DEFINE_string('dnn_nonlin', 'sigmoid', '')
 
 # Training params
-tf.compat.v1.flags.DEFINE_integer('batch_size', 256, 'Batch size for training')
+tf.compat.v1.flags.DEFINE_integer('batch_size', 64, 'Batch size for training')
 tf.compat.v1.flags.DEFINE_string('weight_strategy', 'rect', 'One of \'rect\' or \'last\'')
 tf.compat.v1.flags.DEFINE_bool('randomize_charts', False, '')
 tf.compat.v1.flags.DEFINE_bool('balanced_class', True, 'If true, balance classes, otherwise use prior.')
@@ -183,8 +183,11 @@ def main(_):
         'opt': FLAGS.opt,
     }
     print('Model configuration: {}'.format(model_config))
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True  # Prevents TensorFlow from grabbing all GPU memory at once
+    config.gpu_options.per_process_gpu_memory_fraction = 0.6  # Limits TensorFlow to 80% of GPU memory
 
-    with tf.Graph().as_default(), tf.Session() as sess:
+    with tf.Graph().as_default(), tf.Session(config=config) as sess:
         if do_train:
             print('Creating train model')
             with tf.variable_scope('model_sp', reuse=None):
@@ -264,6 +267,12 @@ def main(_):
                 while 1 == 0 or FLAGS.nepochs < 0 or batch_num < nbatches:
                     batch_time_start = time.time()
                     feats_audio, feats_other, targets, target_weights = model_train.prepare_train_batch(charts_train, **train_batch_config)
+                    if feats_audio.shape[0] < 256:
+                        pad_size = FLAGS.batch_size - feats_audio.shape[0]
+                        feats_audio = np.pad(feats_audio, ((0, pad_size), (0, 0), (0, 0), (0, 0), (0, 0)), mode='constant')
+                        feats_other = np.pad(feats_other, ((0, pad_size), (0, 0), (0, 0)), mode='constant')
+                        targets = np.pad(targets, ((0, pad_size), (0, 0)), mode='constant')
+                        target_weights = np.pad(target_weights, ((0, pad_size), (0, 0)), mode='constant')
                     feed_dict = {
                         model_train.feats_audio: feats_audio,
                         model_train.feats_other: feats_other,
