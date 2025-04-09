@@ -81,7 +81,10 @@ def main(_):
     do_train_eval = do_train and do_valid
     do_eval = bool(FLAGS.test_txt_fp)
     do_cnn_export = bool(FLAGS.export_feat_name)
-
+    config = tf.compat.v1.ConfigProto()
+    config.gpu_options.allow_growth = True
+    session = tf.compat.v1.Session(config=config)
+    tf.compat.v1.keras.backend.set_session(session)
     # Load data
     print('Loading data')
     train_data, valid_data, test_data = open_dataset_fps(FLAGS.train_txt_fp, FLAGS.valid_txt_fp, FLAGS.test_txt_fp)
@@ -229,7 +232,8 @@ def main(_):
 
             eval_metric_names = ['xentropy_avg', 'pos_xentropy_avg', 'auroc', 'auprc', 'fscore', 'precision', 'recall', 'threshold', 'accuracy', 'perplexity', 'density_rel']
             eval_metrics = {}
-            eval_summaries = []
+            eval_summary_list = []  # ← this is the real list we'll merge later
+
             for eval_metric_name in eval_metric_names:
                 name_mean = 'eval_mean_{}'.format(eval_metric_name)
                 name_var = 'eval_var_{}'.format(eval_metric_name)
@@ -237,11 +241,13 @@ def main(_):
                 ph_var = tf.placeholder(tf.float32, shape=[], name=name_var)
                 summary_mean = tf.summary.scalar(name_mean, ph_mean)
                 summary_var = tf.summary.scalar(name_var, ph_var)
-                eval_summaries.append(tf.summary.merge([summary_mean, summary_var]))
+                eval_summary_list.extend([summary_mean, summary_var])  # ✅ use .extend instead of append
                 eval_metrics[eval_metric_name] = (ph_mean, ph_var)
+
             eval_time = tf.placeholder(tf.float32, shape=[], name='eval_time')
             eval_time_summary = tf.summary.scalar('eval_time', eval_time)
-            eval_summaries = tf.summary.merge([eval_time_summary] + eval_summaries)
+
+            eval_summaries = tf.summary.merge([eval_time_summary] + eval_summary_list)  # ✅ merge once
 
             # Calculate epoch stuff
             train_nframes = sum([chart.get_nframes_annotated() for chart in charts_train])
@@ -279,6 +285,15 @@ def main(_):
                         model_train.targets: targets,
                         model_train.target_weights: target_weights
                     }
+                    loss_val = sess.run(model_train.avg_neg_log_lhood, feed_dict=feed_dict)
+                    if not np.isfinite(loss_val):
+                        print("‼️ NaN or Inf detected in loss:", loss_val)
+                        np.set_printoptions(threshold=np.inf, suppress=True)
+                        print("Feats audio stats", np.min(feed_dict[model_train.feats_audio]), np.max(feed_dict[model_train.feats_audio]))
+                        print("Feats other stats", np.min(feed_dict[model_train.feats_other]), np.max(feed_dict[model_train.feats_other]))
+                        print("Labels stats", np.min(feed_dict[model_train.targets]), np.max(feed_dict[model_train.targets]))
+                        exit()
+
                     batch_xentropy, _ = sess.run([model_train.avg_neg_log_lhood, model_train.train_op], feed_dict=feed_dict)
 
                     epoch_xentropies.append(batch_xentropy)
@@ -330,15 +345,20 @@ def main(_):
                                 metrics[metrics_key].append(metric_value)
 
                         metrics = {k: (np.mean(v), np.var(v)) for k, v in list(metrics.items())}
-                        feed_dict = {}
                         results = []
-                        for metric_name, (mean, var) in list(metrics.items()):
-                            feed_dict[eval_metrics[metric_name][0]] = mean
-                            feed_dict[eval_metrics[metric_name][1]] = var
+# Ensure all expected metrics are present
+                        for metric_name in eval_metrics:
+                            if metric_name not in metrics:
+                                print(f"⚠️ Warning: '{metric_name}' missing from metrics. Injecting default.")
+                                metrics[metric_name] = (0.0, 0.0)
+
+                        feed_dict = {}
+                        for metric_name, (mean, var) in metrics.items():
+                            if metric_name in eval_metrics:
+                                feed_dict[eval_metrics[metric_name][0]] = mean
+                                feed_dict[eval_metrics[metric_name][1]] = var
+
                         feed_dict[eval_time] = time.time() - eval_start_time
-
-                        summary_writer.add_summary(sess.run(eval_summaries, feed_dict=feed_dict), batch_num)
-
                         perplexity_avg_mean = metrics['perplexity'][0]
                         if perplexity_avg_mean < eval_best_perplexity:
                             print('Perplexity {} better than previous {}'.format(perplexity_avg_mean, eval_best_perplexity))

@@ -1,4 +1,4 @@
-source smd_0_push.sh
+source ./smd_0_push.sh
 
 python3 dataset_json.py \
 	${SMDATA_DIR}/json_filt/${1} \

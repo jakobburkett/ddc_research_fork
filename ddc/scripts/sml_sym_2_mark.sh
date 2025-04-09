@@ -1,4 +1,4 @@
-source sml_0_push.sh
+source ./sml_0_push.sh
 
 TRAIN_DIR=tmp/ngram
 rm -rf ${TRAIN_DIR}

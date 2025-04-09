@@ -8,6 +8,7 @@ from essentia.standard import MetadataReader
 import numpy as np
 import tensorflow as tf
 from scipy.signal import argrelextrema
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 #print (tf.__version__)
 #assert tf.__version__ == '0.12.1'
 
@@ -53,8 +54,13 @@ def load_sp_model(sp_ckpt_fp, sess, batch_size=128):
     # model_sp_vars = tf.compat.v1.all_variables()
     # print("model_sp_vars = {}", model_sp_vars)
     # saver = tf.compat.v1.train.Saver(model_sp_vars)
-    saver = tf.compat.v1.train.import_meta_graph('infer/server_aux/onset_net_train-48000.meta')
-    saver.restore(sess, tf.train.latest_checkpoint(sp_ckpt_fp))
+    meta_fp = sp_ckpt_fp + ".meta"
+    for v in tf.global_variables():
+        print(v.name)
+    checkpoint_vars = [v for v in tf.global_variables() if 'model_ss' in v.name]
+
+    saver = tf.compat.v1.train.import_meta_graph(meta_fp)
+    saver.restore(sess, sp_ckpt_fp)
     return model_sp
 
 def load_ss_model(ss_ckpt_fp, sess):
@@ -75,10 +81,10 @@ def load_ss_model(ss_ckpt_fp, sess):
             cnn_filter_shapes=[],
             cnn_init=None,
             cnn_pool=[],
-            cnn_dim_reduction_size=None,
+            cnn_dim_reduction_size=-1,
             cnn_dim_reduction_init=None,
-            cnn_dim_reduction_nonlin=None,
-            cnn_dim_reduction_keep_prob=None,
+            cnn_dim_reduction_nonlin='',
+            cnn_dim_reduction_keep_prob=1.0,
             rnn_proj_init=None,
             rnn_cell_type='lstm',
             rnn_size=128,
@@ -92,6 +98,12 @@ def load_ss_model(ss_ckpt_fp, sess):
     model_ss_vars = list([v for v in tf.all_variables() if 'model_ss' in v.name])
     saver = tf.train.Saver(model_ss_vars)
     saver.restore(sess, ss_ckpt_fp)
+
+    # Initialize any variables that were not restored
+    uninitialized_vars = [v for v in tf.global_variables() if not sess.run(tf.is_variable_initialized(v))]
+    if uninitialized_vars:
+        sess.run(tf.variables_initializer(uninitialized_vars))
+
     return model_ss
 
 # These are thresholds producing best perchart Fscore on valid set
@@ -408,7 +420,7 @@ if __name__ == '__main__':
     open(dst, "w").write(data)
     print ('Loading band norms')
     with open(dst, 'rb') as f:
-        NORM = pickle.load(f)
+        NORM = pickle.load(f, encoding='latin1')
 
     global ANALYZERS
     print ('Creating Mel analyzers')
@@ -421,11 +433,12 @@ if __name__ == '__main__':
 
     global SP_MODEL, SS_MODEL
     with graph.as_default():
-        print ('Loading step placement model')
-        SP_MODEL = load_sp_model(ARGS.sp_ckpt_fp, SESS, ARGS.sp_batch_size)
-        print ('Loading step selection model')
-        SS_MODEL = load_ss_model(ARGS.ss_ckpt_fp, SESS)
+        with SESS.as_default():
+            print ('Loading step placement model')
+            SP_MODEL = load_sp_model(ARGS.sp_ckpt_fp, SESS, ARGS.sp_batch_size)
+            print ('Loading step selection model')
+            SS_MODEL = load_ss_model(ARGS.ss_ckpt_fp, SESS)
 
     if ARGS.max_file_size is not None:
         app.config['MAX_CONTENT_LENGTH'] = ARGS.max_file_size
-    app.run(host='192.168.0.112', port=int(os.environ.get('PORT', 3000)))
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 3000)))

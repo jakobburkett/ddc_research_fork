@@ -1,4 +1,4 @@
-source smd_0_push.sh
+source ./smd_0_push.sh
 
 python3 filter_json.py \
 	${SMDATA_DIR}/json_raw/${1} \

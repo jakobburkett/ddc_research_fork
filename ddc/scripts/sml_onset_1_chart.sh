@@ -1,4 +1,4 @@
-source sml_0_push.sh
+source ./sml_0_push.sh
 
 python create_charts.py \
 	${SMDATA_DIR}/json_filt/${1}_train.txt \

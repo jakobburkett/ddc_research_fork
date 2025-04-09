@@ -1,3 +1,3 @@
-source var.sh
+source ./var.sh
 
 pushd ../learn

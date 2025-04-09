@@ -106,7 +106,7 @@ class SymNet:
         with tf.device('/cpu:0'):
             # embed
             if sym_embedding_size > 0:
-                with tf.variable_scope('sym_embedding'):
+                with tf.variable_scope('sym_embedding', reuse=tf.AUTO_REUSE):
                     if sym_in_type == 'onehot':
                         embed_w = tf.get_variable('W', [in_len, sym_embedding_size])
                         feats_sym = tf.nn.embedding_lookup(embed_w, syms)
@@ -130,7 +130,7 @@ class SymNet:
             nfilt_last = audio_nchannels
             for i, ((ntime, nband, nfilt), (ptime, pband)) in enumerate(zip(cnn_filter_shapes, cnn_pool)):
                 layer_name = 'cnn_{}'.format(i)
-                with tf.variable_scope(layer_name):
+                with tf.variable_scope(layer_name, reuse=tf.AUTO_REUSE):
                     filters = tf.get_variable('filters', [ntime, nband, nfilt_last, nfilt], initializer=cnn_init, dtype=dtype)
                     biases = tf.get_variable('biases', [nfilt], initializer=tf.constant_initializer(0.1), dtype=dtype)
                 conv = tf.nn.conv2d(layer_last, filters, [1, 1, 1, 1], padding='VALID')
@@ -157,9 +157,9 @@ class SymNet:
 
         # Reduce CNN dimensionality
         if cnn_dim_reduction_size >= 0:
-            with tf.compat.v1.variable_scope('cnn_dim_reduction'):
-                cnn_dim_reduction_W = tf.compat.v1.get_variable('W', [nfeats_conv, cnn_dim_reduction_size], initializer=cnn_dim_reduction_init, dtype=dtype)
-                cnn_dim_reduction_b = tf.compat.v1.get_variable('b', [cnn_dim_reduction_size], initializer=tf.constant_initializer(0.0), dtype=dtype)
+            with tf.variable_scope('cnn_dim_reduction', reuse=tf.AUTO_REUSE):
+                cnn_dim_reduction_W = tf.get_variable('W', [nfeats_conv, cnn_dim_reduction_size], initializer=cnn_dim_reduction_init, dtype=dtype)
+                cnn_dim_reduction_b = tf.get_variable('b', [cnn_dim_reduction_size], initializer=tf.constant_initializer(0.0), dtype=dtype)
 
                 nfeats_conv = cnn_dim_reduction_size
                 feats_conv = tf.nn.bias_add(tf.matmul(feats_conv, cnn_dim_reduction_W), cnn_dim_reduction_b)
@@ -180,9 +180,9 @@ class SymNet:
         if do_rnn:
             nfeats_nosym = nfeats_conv + other_nfeats
             # TODO: should this be on cpu? (batch_size, nunroll, sym_embedding_size + nfeats)
-            feats_nosym = tf.concat(1, [feats_conv, feats_other])
+            feats_nosym = tf.concat([feats_conv, feats_other], axis=1)
 
-            with tf.variable_scope('rnn_proj'):
+            with tf.variable_scope('rnn_proj', reuse=tf.AUTO_REUSE):
                 rnn_proj_sym_w = tf.get_variable('W', [nfeats_sym, rnn_size], initializer=rnn_proj_init, dtype=dtype)
                 rnn_proj_nosym_w = tf.get_variable('nosym_W', [nfeats_nosym, rnn_size], initializer=rnn_proj_init, dtype=dtype)
                 rnn_proj_b = tf.get_variable('b', [rnn_size], initializer=tf.constant_initializer(0.0), dtype=dtype)
@@ -192,7 +192,7 @@ class SymNet:
             rnn_inputs_prebias = tf.add(rnn_inputs_sym, rnn_inputs_nosym)
             rnn_inputs = tf.nn.bias_add(rnn_inputs_prebias, rnn_proj_b)
             rnn_inputs = tf.reshape(rnn_inputs, shape=[batch_size, nunroll, rnn_size])
-            rnn_inputs = tf.split(1, nunroll, rnn_inputs)
+            rnn_inputs = tf.split(value=rnn_inputs, num_or_size_splits=nunroll, axis=1)
             rnn_inputs = [tf.squeeze(input_, [1]) for input_ in rnn_inputs]
 
             if rnn_cell_type == 'rnn':
@@ -215,7 +215,7 @@ class SymNet:
 
             # RNN
             # TODO: weight init
-            with tf.variable_scope('rnn_unroll'):
+            with tf.variable_scope('rnn_unroll', reuse=tf.AUTO_REUSE):
                 state = initial_state
                 outputs = []
                 for i in range(nunroll):
@@ -225,13 +225,13 @@ class SymNet:
                     outputs.append(cell_output)
                 final_state = state
 
-            rnn_output_inspect = tf.concat(1, outputs)
+            rnn_output_inspect = tf.concat(outputs, axis=1)
 
             rnn_output = tf.reshape(rnn_output_inspect, [batch_size * nunroll, rnn_size])
             rnn_output_size = rnn_size
         else:
             nfeats_tot = nfeats_sym + nfeats_conv + other_nfeats
-            feats_all = tf.concat(1, [feats_sym, feats_conv, feats_other])
+            feats_all = tf.concat([feats_sym, feats_conv, feats_other], axis=1)
             rnn_output = tf.reshape(feats_all, shape=[batch_size, in_nunroll * nfeats_tot])
             rnn_output_size = in_nunroll * nfeats_tot
         print(('rnn_output: {}'.format(rnn_output.get_shape())))
@@ -245,7 +245,7 @@ class SymNet:
             last_layer_size = rnn_output_size
             for i, layer_size in enumerate(dnn_sizes):
                 layer_name = 'dnn_{}'.format(i)
-                with tf.variable_scope(layer_name):
+                with tf.variable_scope(layer_name, reuse=tf.AUTO_REUSE):
                     dnn_w = tf.get_variable('W', shape=[last_layer_size, layer_size], initializer=dnn_init, dtype=dtype)
                     dnn_b = tf.get_variable('b', shape=[layer_size], initializer=tf.constant_initializer(0.0), dtype=dtype)
                 projected = tf.nn.bias_add(tf.matmul(last_layer, dnn_w), dnn_b)
@@ -261,7 +261,7 @@ class SymNet:
 
             dnn_output_inspect = dnn_output
 
-        with tf.variable_scope('sym_rnn_output'):
+        with tf.variable_scope('sym_rnn_output', reuse=tf.AUTO_REUSE):
             if sym_out_type == 'onehot':
                 # Output projection
                 softmax_w = tf.get_variable('softmax_w', [dnn_output_size, out_len])
@@ -281,7 +281,7 @@ class SymNet:
                 softmax_b = tf.get_variable('softmax_b', [out_len])
 
                 # Concat outputs to (batch_size, nunroll * rnn_size)
-                output = tf.concat(1, outputs)
+                output = tf.concat(outputs, axis=1)
                 # TODO: remove this once verify that it's unnecessary
                 output = tf.reshape(output, [batch_size, out_nunroll, rnn_size])
                 # Reshape outputs to (batch_size * nunroll, rnn_size) for matmul

@@ -1,4 +1,4 @@
-source sml_0_push.sh
+source ./sml_0_push.sh
 
 EXP_DIR=tmp/train_perplexity
 rm -rf ${EXP_DIR}
@@ -8,7 +8,6 @@ python onset_train3.py \
         --test_txt_fp=${SM_DIR}/data/chart_onset/${1}/mel80hop441/${1}_test.txt \
         --train_txt_fp=${SM_DIR}/data/chart_onset/${1}/mel80hop441/${1}_train.txt \
         --valid_txt_fp=${SM_DIR}/data/chart_onset/${1}/mel80hop441/${1}_valid.txt \
-        --z_score \
         --audio_context_radius=7 \
         --audio_nbands=80 \
         --audio_nchannels=3 \
@@ -21,10 +20,10 @@ python onset_train3.py \
         --rnn_nlayers=0 \
         --rnn_nunroll=1 \
         --rnn_keep_prob=0.5 \
-        --dnn_nonlin=sigmoid \
+        --dnn_nonlin=relu \
         --dnn_sizes=256,128 \
         --dnn_keep_prob=0.5 \
-        --batch_size=256 \
+        --batch_size=8 \
         --weight_strategy=rect \
         --nobalanced_class \
         --exclude_onset_neighbors=2 \

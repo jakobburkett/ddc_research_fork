@@ -51,10 +51,10 @@ tf.compat.v1.flags.DEFINE_string('feat_diff_feet_to_id_fp', '', '')
 tf.compat.v1.flags.DEFINE_string('feat_diff_coarse_to_id_fp', '', '')
 tf.compat.v1.flags.DEFINE_bool('feat_diff_dipstick', False, '')
 tf.compat.v1.flags.DEFINE_string('feat_freetext_to_id_fp', '', '')
-tf.compat.v1.flags.DEFINE_integer('feat_bucket_beat_diff_n', None, '')
-tf.compat.v1.flags.DEFINE_float('feat_bucket_beat_diff_max', None, '')
-tf.compat.v1.flags.DEFINE_integer('feat_bucket_time_diff_n', None, '')
-tf.compat.v1.flags.DEFINE_float('feat_bucket_time_diff_max', None, '')
+tf.compat.v1.flags.DEFINE_integer('feat_bucket_beat_diff_n', 0, '')
+tf.compat.v1.flags.DEFINE_float('feat_bucket_beat_diff_max', 0.0, '')
+tf.compat.v1.flags.DEFINE_integer('feat_bucket_time_diff_n', 0, '')
+tf.compat.v1.flags.DEFINE_float('feat_bucket_time_diff_max', 0, '')
 
 # Network params
 tf.compat.v1.flags.DEFINE_integer('batch_size', 128, 'Batch size for training')
@@ -405,16 +405,21 @@ def main(_):
                         metrics['accuracy'].append(accuracy)
 
                     metrics = {k: (np.mean(v), np.var(v)) for k, v in list(metrics.items())}
-                    feed_dict = {}
                     results = []
-                    for metric_name, (mean, var) in list(metrics.items()):
-                        feed_dict[eval_metrics[metric_name][0]] = mean
-                        feed_dict[eval_metrics[metric_name][1]] = var
+                    feed_dict = {}
+                    for metric_name, (mean, var) in metrics.items():
+                        if metric_name in eval_metrics:
+                            ph_mean, ph_var = eval_metrics[metric_name]
+                            feed_dict[ph_mean] = mean
+                            feed_dict[ph_var] = var
                     feed_dict[eval_time] = time.time() - eval_start_time
 
-                    summary_writer.add_summary(sess.run(eval_summaries, feed_dict=feed_dict), batch_num)
+                    try:
+                        summary_writer.add_summary(sess.run(eval_summaries, feed_dict=feed_dict), batch_num)
+                    except tf.errors.InvalidArgumentError as e:
+                        print(f"Skipping eval summary due to missing placeholder: {e}")
 
-                    xentropy_avg_mean = metrics['xentropy_avg'][0]
+                    xentropy_avg_mean = metrics.get('xentropy_avg', (float('inf'), 0.0))[0]
                     if xentropy_avg_mean < eval_best_xentropy_avg:
                         print('Xentropy {} better than previous {}'.format(xentropy_avg_mean, eval_best_xentropy_avg))
                         x_file.write('{},{},{}\n'.format(xentropy_avg_mean, eval_best_xentropy_avg, batch_num))
@@ -429,7 +434,7 @@ def main(_):
                         p_file.flush()
                         eval_best_perplexity = perplexity_avg_mean
 
-                    accuracy_mean = metrics['accuracy'][0]
+                    accuracy_mean = metrics.get('accuracy', (0.0, 0.0))[0]
                     if accuracy_mean > eval_best_accuracy:
                         print('Accuracy {} better than previous {}'.format(accuracy_mean, eval_best_accuracy))
                         a_file.write('{},{},{}\n'.format(accuracy_mean, eval_best_accuracy, batch_num))

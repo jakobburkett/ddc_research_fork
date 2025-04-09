@@ -1,5 +1,6 @@
-source sml_0_push.sh
+source ./sml_0_push.sh
 
+export CUDA_VISIBLE_DEVICES=""
 EXP_DIR=tmp/train_sym
 rm -rf ${EXP_DIR}
 mkdir -p ${EXP_DIR}

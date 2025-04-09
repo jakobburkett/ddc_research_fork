@@ -1,4 +1,4 @@
-source sml_0_push.sh
+source ./sml_0_push.sh
 
 python extract_feats.py \
 	${SMDATA_DIR}/json_filt/${1}.txt \

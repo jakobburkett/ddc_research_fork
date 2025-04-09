@@ -192,7 +192,7 @@ class SymNet:
             rnn_inputs_prebias = tf.add(rnn_inputs_sym, rnn_inputs_nosym)
             rnn_inputs = tf.nn.bias_add(rnn_inputs_prebias, rnn_proj_b)
             rnn_inputs = tf.reshape(rnn_inputs, shape=[batch_size, nunroll, rnn_size])
-            rnn_inputs = tf.split(1, nunroll, rnn_inputs)
+            rnn_inputs = tf.split(value=rnn_inputs, num_or_size_splits=nunroll, axis=1)
             rnn_inputs = [tf.squeeze(input_, [1]) for input_ in rnn_inputs]
 
             if rnn_cell_type == 'rnn':
